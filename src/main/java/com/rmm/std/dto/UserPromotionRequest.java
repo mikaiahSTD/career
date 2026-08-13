@@ -1,9 +1,8 @@
 package com.rmm.std.dto;
 
+import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.UUID;
-
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,14 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserPromotionRequest {
 
-    @NotNull
-    private UUID userId;
+  @NotNull private UUID userId;
 
-    @NotNull
-    private UUID promotionId;
+  @NotNull private UUID promotionId;
 
-    @Builder.Default
-    private boolean graduated = false;
+  @Builder.Default private boolean graduated = false;
 
-    private OffsetDateTime graduationDate;
+  private OffsetDateTime graduationDate;
 }

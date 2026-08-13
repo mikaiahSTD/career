@@ -13,9 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PromotionRequest {
 
-    @NotBlank
-    private String label;
+  @NotBlank private String label;
 
-    @NotNull
-    private Integer startYear;
+  @NotNull private Integer startYear;
 }

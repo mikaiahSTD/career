@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TranscriptSendResponse {
 
-    private String message;
-    private String s3Url;
+  private String message;
+  private String s3Url;
 }

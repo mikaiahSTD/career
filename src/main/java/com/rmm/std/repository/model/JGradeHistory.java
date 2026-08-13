@@ -1,9 +1,5 @@
 package com.rmm.std.repository.model;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,6 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,27 +27,27 @@ import lombok.Setter;
 @AllArgsConstructor
 public class JGradeHistory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "grade_id", nullable = false)
-    private JGrade grade;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "grade_id", nullable = false)
+  private JGrade grade;
 
-    @Column(name = "old_value", precision = 4, scale = 2)
-    private BigDecimal oldValue;
+  @Column(name = "old_value", precision = 4, scale = 2)
+  private BigDecimal oldValue;
 
-    @Column(name = "new_value", nullable = false, precision = 4, scale = 2)
-    private BigDecimal newValue;
+  @Column(name = "new_value", nullable = false, precision = 4, scale = 2)
+  private BigDecimal newValue;
 
-    @Column(nullable = false)
-    private String reason;
+  @Column(nullable = false)
+  private String reason;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "modified_by", nullable = false)
-    private JUser modifiedBy;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "modified_by", nullable = false)
+  private JUser modifiedBy;
 
-    @Column(name = "modified_at", nullable = false)
-    private OffsetDateTime modifiedAt;
+  @Column(name = "modified_at", nullable = false)
+  private OffsetDateTime modifiedAt;
 }
