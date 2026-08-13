@@ -12,9 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CourseRequest {
 
-    @NotBlank
-    private String ref;
+  @NotBlank private String ref;
 
-    private String title;
-    private Integer credits;
+  private String title;
+  private Integer credits;
 }

@@ -1,7 +1,6 @@
 package com.rmm.std.dto;
 
 import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TranscriptSendRequest {
-    private UUID semesterId;
+  private UUID semesterId;
 }

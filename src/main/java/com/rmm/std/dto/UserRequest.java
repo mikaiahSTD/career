@@ -1,7 +1,6 @@
 package com.rmm.std.dto;
 
-import com.rmm.std.domain.Role;
-
+import com.rmm.std.constant.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,17 +15,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserRequest {
 
-    @NotBlank
-    private String ref;
+  @NotBlank private String ref;
 
-    private String firstname;
+  private String firstname;
 
-    private String lastname;
+  private String lastname;
 
-    @NotBlank
-    @Email
-    private String email;
+  @NotBlank @Email private String email;
 
-    @NotNull
-    private Role role;
+  @NotBlank private String password;
+
+  @NotNull private Role role;
 }

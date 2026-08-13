@@ -1,8 +1,7 @@
 package com.rmm.std.dto;
 
-import java.util.UUID;
-
 import jakarta.validation.constraints.NotNull;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CourseTeacherRequest {
 
-    @NotNull
-    private UUID courseId;
+  @NotNull private UUID courseId;
 
-    @NotNull
-    private UUID teacherId;
+  @NotNull private UUID teacherId;
 }
