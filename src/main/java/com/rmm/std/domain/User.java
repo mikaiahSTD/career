@@ -1,5 +1,6 @@
 package com.rmm.std.domain;
 
+import com.rmm.std.constant.Role;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,5 +18,6 @@ public class User {
   private String firstname;
   private String lastname;
   private String email;
+  private String password;
   private Role role;
 }

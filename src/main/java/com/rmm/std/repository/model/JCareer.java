@@ -1,6 +1,6 @@
 package com.rmm.std.repository.model;
 
-import com.rmm.std.domain.Specialization;
+import com.rmm.std.constant.Specialization;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
