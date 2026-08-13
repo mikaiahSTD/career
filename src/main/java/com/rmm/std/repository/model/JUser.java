@@ -1,6 +1,6 @@
 package com.rmm.std.repository.model;
 
-import com.rmm.std.domain.Role;
+import com.rmm.std.constant.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,6 +15,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "\"user\"")
@@ -39,7 +41,11 @@ public class JUser {
   @Column(nullable = false, unique = true)
   private String email;
 
+  @Column(nullable = false)
+  private String password;
+
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(nullable = false)
   private Role role;
 }

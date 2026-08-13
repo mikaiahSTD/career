@@ -1,4 +1,4 @@
-package com.rmm.std.domain;
+package com.rmm.std.constant;
 
 public enum Role {
   TEACHER,

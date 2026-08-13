@@ -1,6 +1,6 @@
 package com.rmm.std.repository.model;
 
-import com.rmm.std.domain.Specialization;
+import com.rmm.std.constant.Specialization;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,6 +14,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "career")
@@ -31,5 +33,6 @@ public class JCareer {
   private String title;
 
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private Specialization specialization;
 }

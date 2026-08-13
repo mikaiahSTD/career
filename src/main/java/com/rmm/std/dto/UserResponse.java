@@ -1,6 +1,6 @@
 package com.rmm.std.dto;
 
-import com.rmm.std.domain.Role;
+import com.rmm.std.constant.Role;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

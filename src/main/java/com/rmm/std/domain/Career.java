@@ -1,5 +1,6 @@
 package com.rmm.std.domain;
 
+import com.rmm.std.constant.Specialization;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,6 +1,6 @@
 package com.rmm.std.dto;
 
-import com.rmm.std.domain.Role;
+import com.rmm.std.constant.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +22,8 @@ public class UserRequest {
   private String lastname;
 
   @NotBlank @Email private String email;
+
+  @NotBlank private String password;
 
   @NotNull private Role role;
 }

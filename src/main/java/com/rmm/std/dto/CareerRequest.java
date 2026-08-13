@@ -1,6 +1,6 @@
 package com.rmm.std.dto;
 
-import com.rmm.std.domain.Specialization;
+import com.rmm.std.constant.Specialization;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
