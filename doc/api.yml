@@ -1,0 +1,1831 @@
+openapi: 3.0.3
+info:
+  title: School Management API
+  description: >
+    API for managing users, careers, promotions, groups, courses, exams and grades,
+    including transcript delivery by email and graduate list exports.
+  version: 1.0.0
+
+servers:
+  - url: https://ce662nwxk7c5pmpunht2ntmhc40njaoq.lambda-url.eu-west-3.on.aws/
+    description: AWS
+  - url: http://localhost:9090/
+    description: local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Users
+  - name: Careers
+  - name: Promotions
+  - name: Semesters
+  - name: Groups
+  - name: Courses
+  - name: CareerCourses
+  - name: UserGroups
+  - name: UserPromotions
+  - name: CourseTeachers
+  - name: CourseGroups
+  - name: Exams
+  - name: Grades
+  - name: GradeHistory
+  - name: Transcripts
+  - name: GraduatesExport
+  - name: UI
+
+paths:
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: "Requires role: ADMIN."
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: role
+          schema:
+            $ref: '#/components/schemas/Role'
+          description: Filter by role
+      responses:
+        '200':
+          description: Paged list of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponsePage'
+    post:
+      tags: [Users]
+      summary: Create a user
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Users]
+      summary: Get a user by id
+      description: "Requires role: ADMIN, or the requesting user fetching their own record."
+      responses:
+        '200':
+          description: The user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Users]
+      summary: Update a user
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me/grades:
+    get:
+      tags: [Users]
+      summary: Get the current authenticated student's own grades
+      description: "Requires role: STUDENT. A student may only ever see their own grades, never another student's."
+      parameters:
+        - in: query
+          name: semesterId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of the student's grades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeResponse'
+
+
+  /careers:
+    get:
+      tags: [Careers]
+      summary: List careers (curricula / specializations)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Paged list of careers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerResponsePage'
+    post:
+      tags: [Careers]
+      summary: Create a career
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerRequest'
+      responses:
+        '201':
+          description: Career created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerResponse'
+
+  /careers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Careers]
+      summary: Get a career by id
+      responses:
+        '200':
+          description: The career
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Careers]
+      summary: Update a career
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerRequest'
+      responses:
+        '200':
+          description: Career updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Careers]
+      summary: Delete a career
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Career deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /promotions:
+    get:
+      tags: [Promotions]
+      summary: List promotions (cohorts)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Paged list of promotions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionResponsePage'
+    post:
+      tags: [Promotions]
+      summary: Create a promotion
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionRequest'
+      responses:
+        '201':
+          description: Promotion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionResponse'
+
+  /promotions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Promotions]
+      summary: Get a promotion by id
+      responses:
+        '200':
+          description: The promotion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Promotions]
+      summary: Update a promotion
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionRequest'
+      responses:
+        '200':
+          description: Promotion updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Promotions]
+      summary: Delete a promotion
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Promotion deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /promotions/{id}/graduates:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Promotions]
+      summary: List graduated students of a promotion (JSON)
+      description: "Requires role: ADMIN. Feature: promotion results over the 3-year program."
+      responses:
+        '200':
+          description: List of graduated students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+
+  /semesters:
+    get:
+      tags: [Semesters]
+      summary: List semesters
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: promotionId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of semesters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterResponsePage'
+    post:
+      tags: [Semesters]
+      summary: Create a semester
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemesterRequest'
+      responses:
+        '201':
+          description: Semester created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterResponse'
+
+  /semesters/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Semesters]
+      summary: Get a semester by id
+      responses:
+        '200':
+          description: The semester
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Semesters]
+      summary: Update a semester
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemesterRequest'
+      responses:
+        '200':
+          description: Semester updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Semesters]
+      summary: Delete a semester
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Semester deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /groups:
+    get:
+      tags: [Groups]
+      summary: List groups
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: promotionId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: careerId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponsePage'
+    post:
+      tags: [Groups]
+      summary: Create a group
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+
+  /groups/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Groups]
+      summary: Get a group by id
+      responses:
+        '200':
+          description: The group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Groups]
+      summary: Update a group
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRequest'
+      responses:
+        '200':
+          description: Group updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Groups]
+      summary: Delete a group
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Group deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /courses:
+    get:
+      tags: [Courses]
+      summary: List courses
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Paged list of courses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResponsePage'
+    post:
+      tags: [Courses]
+      summary: Create a course
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRequest'
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResponse'
+
+  /courses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Courses]
+      summary: Get a course by id
+      responses:
+        '200':
+          description: The course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Courses]
+      summary: Update a course
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseRequest'
+      responses:
+        '200':
+          description: Course updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Courses]
+      summary: Delete a course
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Course deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /career-courses:
+    get:
+      tags: [CareerCourses]
+      summary: List career-course curriculum links
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: careerId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of career-course links
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerCourseResponsePage'
+    post:
+      tags: [CareerCourses]
+      summary: Add a course to a career's curriculum
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerCourseRequest'
+      responses:
+        '201':
+          description: Career-course link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerCourseResponse'
+
+  /career-courses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [CareerCourses]
+      summary: Get a career-course link by id
+      responses:
+        '200':
+          description: The career-course link
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerCourseResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [CareerCourses]
+      summary: Update a career-course link
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CareerCourseRequest'
+      responses:
+        '200':
+          description: Career-course link updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerCourseResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [CareerCourses]
+      summary: Remove a course from a career's curriculum
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Career-course link deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user-groups:
+    get:
+      tags: [UserGroups]
+      summary: List student group memberships (history included)
+      description: "Requires role: ADMIN or TEACHER. Records with a null endDate are the student's current group."
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: userId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: current
+          schema:
+            type: boolean
+          description: If true, only return memberships with no endDate
+      responses:
+        '200':
+          description: Paged list of group memberships
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupResponsePage'
+    post:
+      tags: [UserGroups]
+      summary: Assign a student to a group
+      description: >
+        Requires role: ADMIN. When a student changes group, the previous open
+        UserGroup record's endDate should be closed as part of this operation
+        server-side (handled by the service layer, not by the client).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserGroupRequest'
+      responses:
+        '201':
+          description: Group membership created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupResponse'
+
+  /user-groups/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [UserGroups]
+      summary: Get a group membership record by id
+      responses:
+        '200':
+          description: The group membership record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [UserGroups]
+      summary: Update a group membership record
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserGroupRequest'
+      responses:
+        '200':
+          description: Group membership updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserGroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [UserGroups]
+      summary: Delete a group membership record
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Group membership deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user-promotions:
+    get:
+      tags: [UserPromotions]
+      summary: List student-promotion enrollments
+      description: "Requires role: ADMIN."
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: userId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: promotionId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: graduated
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Paged list of enrollments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPromotionResponsePage'
+    post:
+      tags: [UserPromotions]
+      summary: Enroll a student in a promotion
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPromotionRequest'
+      responses:
+        '201':
+          description: Enrollment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPromotionResponse'
+
+  /user-promotions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [UserPromotions]
+      summary: Get an enrollment by id
+      responses:
+        '200':
+          description: The enrollment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPromotionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [UserPromotions]
+      summary: Update an enrollment (e.g. mark as graduated)
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPromotionRequest'
+      responses:
+        '200':
+          description: Enrollment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPromotionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [UserPromotions]
+      summary: Delete an enrollment
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Enrollment deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /course-teachers:
+    get:
+      tags: [CourseTeachers]
+      summary: List course-teacher assignments
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: courseId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: teacherId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of course-teacher assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseTeacherResponsePage'
+    post:
+      tags: [CourseTeachers]
+      summary: Assign a teacher to a course
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseTeacherRequest'
+      responses:
+        '201':
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseTeacherResponse'
+
+  /course-teachers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [CourseTeachers]
+      summary: Get a course-teacher assignment by id
+      responses:
+        '200':
+          description: The assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseTeacherResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [CourseTeachers]
+      summary: Update a course-teacher assignment
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseTeacherRequest'
+      responses:
+        '200':
+          description: Assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseTeacherResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [CourseTeachers]
+      summary: Remove a teacher from a course
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Assignment deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /course-groups:
+    get:
+      tags: [CourseGroups]
+      summary: List which groups a course is taught to, by which teacher
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: courseId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: teacherId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of course-group assignments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseGroupResponsePage'
+    post:
+      tags: [CourseGroups]
+      summary: Assign a course (taught by a teacher) to a group
+      description: "Requires role: ADMIN. A course does not have to be assigned to every group of a promotion."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseGroupRequest'
+      responses:
+        '201':
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseGroupResponse'
+
+  /course-groups/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [CourseGroups]
+      summary: Get a course-group assignment by id
+      responses:
+        '200':
+          description: The assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseGroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [CourseGroups]
+      summary: Update a course-group assignment
+      description: "Requires role: ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseGroupRequest'
+      responses:
+        '200':
+          description: Assignment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseGroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [CourseGroups]
+      summary: Delete a course-group assignment
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Assignment deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /exams:
+    get:
+      tags: [Exams]
+      summary: List exams
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: courseId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of exams
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponsePage'
+    post:
+      tags: [Exams]
+      summary: Create an exam
+      description: "Requires role: TEACHER (own course) or ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamRequest'
+      responses:
+        '201':
+          description: Exam created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+
+  /exams/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Exams]
+      summary: Get an exam by id
+      responses:
+        '200':
+          description: The exam
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Exams]
+      summary: Update an exam
+      description: "Requires role: TEACHER (own course) or ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamRequest'
+      responses:
+        '200':
+          description: Exam updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Exams]
+      summary: Delete an exam
+      description: "Requires role: TEACHER (own course) or ADMIN."
+      responses:
+        '204':
+          description: Exam deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /grades:
+    get:
+      tags: [Grades]
+      summary: List grades
+      description: >
+        Requires role: ADMIN (all grades), TEACHER (grades of their own courses only),
+        or STUDENT (use /users/me/grades instead - a student cannot list other
+        students' grades through this endpoint).
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - in: query
+          name: examId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: studentId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paged list of grades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResponsePage'
+    post:
+      tags: [Grades]
+      summary: Record a new grade
+      description: "Requires role: TEACHER (own course's exams) or ADMIN."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeRequest'
+      responses:
+        '201':
+          description: Grade created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResponse'
+
+  /grades/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Grades]
+      summary: Get a grade by id
+      description: "Requires role: ADMIN, TEACHER of the course, or the STUDENT it belongs to."
+      responses:
+        '200':
+          description: The grade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Grades]
+      summary: Delete a grade
+      description: "Requires role: ADMIN."
+      responses:
+        '204':
+          description: Grade deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /grades/{id}/correct:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    patch:
+      tags: [Grades]
+      summary: Correct a grade's value
+      description: >
+        Requires role: TEACHER (own course) or ADMIN. A reason is mandatory:
+        every correction is appended to that grade's history log
+        (see /grades/{id}/history) instead of silently overwriting the value.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeCorrectionRequest'
+      responses:
+        '200':
+          description: Grade corrected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /grades/{id}/history:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [GradeHistory]
+      summary: Get the full modification history of a grade
+      description: "Requires role: ADMIN, TEACHER of the course, or the STUDENT it belongs to."
+      responses:
+        '200':
+          description: List of historical modifications, most recent first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeHistoryResponse'
+
+  /students/{studentId}/transcript/send:
+    parameters:
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Transcripts]
+      summary: Generate a PDF transcript and email it to the student
+      description: >
+        Requires role: ADMIN, or the STUDENT sending their own transcript.
+        Generates a PDF transcript of grades, uploads it to S3, and emails
+        the student a link to the file.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscriptSendRequest'
+      responses:
+        '202':
+          description: Transcript generation and email dispatch accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptSendResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /promotions/{promotionId}/graduates/export:
+    parameters:
+      - name: promotionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [GraduatesExport]
+      summary: Download the list of graduates of a promotion as an Excel file
+      description: "Requires role: ADMIN. Streams an .xlsx file directly; no email is sent."
+      responses:
+        '200':
+          description: Excel file of graduates
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /ui/promotions:
+    get:
+      tags: [UI]
+      summary: Server-rendered Thymeleaf page listing all promotions
+      description: >
+        Requires role: ADMIN. Renders an HTML page listing every promotion,
+        each with a button that calls GET /promotions/{promotionId}/graduates/export.
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Role:
+      type: string
+      enum: [teacher, student, admin]
+
+    Specialization:
+      type: string
+      enum: [el, tn]
+      nullable: true
+      description: Null means tronc commun (no specialization chosen yet)
+
+    UserRequest:
+      type: object
+      required: [ref, email, role]
+      properties:
+        ref:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UserResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    CareerRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        specialization:
+          $ref: '#/components/schemas/Specialization'
+
+    CareerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        specialization:
+          $ref: '#/components/schemas/Specialization'
+
+    CareerResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    PromotionRequest:
+      type: object
+      required: [label, startYear]
+      properties:
+        label:
+          type: string
+        startYear:
+          type: integer
+
+    PromotionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        startYear:
+          type: integer
+
+    PromotionResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    SemesterRequest:
+      type: object
+      required: [promotionId, number]
+      properties:
+        promotionId:
+          type: string
+          format: uuid
+        number:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+
+    SemesterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        promotionId:
+          type: string
+          format: uuid
+        number:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+
+    SemesterResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    GroupRequest:
+      type: object
+      required: [ref, promotionId, careerId]
+      properties:
+        ref:
+          type: string
+        promotionId:
+          type: string
+          format: uuid
+        careerId:
+          type: string
+          format: uuid
+
+    GroupResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref:
+          type: string
+        promotionId:
+          type: string
+          format: uuid
+        careerId:
+          type: string
+          format: uuid
+
+    GroupResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    CourseRequest:
+      type: object
+      required: [ref]
+      properties:
+        ref:
+          type: string
+        title:
+          type: string
+        credits:
+          type: integer
+
+    CourseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref:
+          type: string
+        title:
+          type: string
+        credits:
+          type: integer
+
+    CourseResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    CareerCourseRequest:
+      type: object
+      required: [careerId, courseId, semesterNumber]
+      properties:
+        careerId:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        semesterNumber:
+          type: integer
+
+    CareerCourseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        careerId:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        semesterNumber:
+          type: integer
+
+    CareerCourseResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    UserGroupRequest:
+      type: object
+      required: [userId, groupId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserGroupResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserGroupResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    UserPromotionRequest:
+      type: object
+      required: [userId, promotionId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        promotionId:
+          type: string
+          format: uuid
+        graduated:
+          type: boolean
+          default: false
+        graduationDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserPromotionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        promotionId:
+          type: string
+          format: uuid
+        graduated:
+          type: boolean
+        graduationDate:
+          type: string
+          format: date-time
+          nullable: true
+
+    UserPromotionResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    CourseTeacherRequest:
+      type: object
+      required: [courseId, teacherId]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        teacherId:
+          type: string
+          format: uuid
+
+    CourseTeacherResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        teacherId:
+          type: string
+          format: uuid
+
+    CourseTeacherResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    CourseGroupRequest:
+      type: object
+      required: [courseId, teacherId, groupId]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        teacherId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+
+    CourseGroupResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        teacherId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+
+    CourseGroupResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    ExamRequest:
+      type: object
+      required: [courseId, coefficient]
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        coefficient:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 9.99
+
+    ExamResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        courseId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        coefficient:
+          type: number
+          format: double
+
+    ExamResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    GradeRequest:
+      type: object
+      required: [examId, studentId, value]
+      properties:
+        examId:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+        value:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 20
+        description:
+          type: string
+
+    GradeCorrectionRequest:
+      type: object
+      required: [value, reason]
+      properties:
+        value:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 20
+        reason:
+          type: string
+          description: Mandatory explanation, stored in the grade's history log
+
+    GradeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        examId:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+        value:
+          type: number
+          format: double
+        assignmentDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+
+    GradeResponsePage:
+      $ref: '#/components/schemas/PageEnvelope'
+
+    GradeHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        gradeId:
+          type: string
+          format: uuid
+        oldValue:
+          type: number
+          format: double
+          nullable: true
+        newValue:
+          type: number
+          format: double
+        reason:
+          type: string
+        modifiedById:
+          type: string
+          format: uuid
+        modifiedAt:
+          type: string
+          format: date-time
+
+    TranscriptSendRequest:
+      type: object
+      properties:
+        semesterId:
+          type: string
+          format: uuid
+          description: Optional. If omitted, the full transcript across all semesters is sent.
+
+    TranscriptSendResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        s3Url:
+          type: string
+          format: uri
+
+    PageEnvelope:
+      type: object
+      properties:
+        content:
+          type: array
+          items: {}
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
