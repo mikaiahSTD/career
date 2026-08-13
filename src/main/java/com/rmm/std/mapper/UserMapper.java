@@ -60,11 +60,26 @@ public class UserMapper {
       return null;
     }
     return UserResponse.builder()
+        .id(user.getId())
         .firstname(user.getFirstname())
         .lastname(user.getLastname())
         .email(user.getEmail())
         .role(user.getRole())
         .ref(user.getRef())
+        .build();
+  }
+
+  public UserResponse toRes(JUser jUser) {
+    if (jUser == null) {
+      return null;
+    }
+    return UserResponse.builder()
+        .id(jUser.getId())
+        .firstname(jUser.getFirstname())
+        .lastname(jUser.getLastname())
+        .email(jUser.getEmail())
+        .role(jUser.getRole())
+        .ref(jUser.getRef())
         .build();
   }
 }

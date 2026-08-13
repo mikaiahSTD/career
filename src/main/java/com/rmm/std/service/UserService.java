@@ -40,11 +40,8 @@ public class UserService implements UserDetailsService {
     }
     User user = userMapper.toUser(req);
     user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-    JUser jUser = userMapper.toJUser(user);
-    userRepository.save(jUser);
-
-    UserResponse res = userMapper.toRes(user);
+    JUser jUser = userRepository.save(userMapper.toJUser(user));
+    UserResponse res = userMapper.toRes(jUser);
     return res;
   }
 }

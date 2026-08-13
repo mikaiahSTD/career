@@ -1,5 +1,6 @@
 package com.rmm.std.handler;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.rmm.std.exception.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -142,12 +143,27 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<ErrorBody> handleHttpMessageNotReadable(
       HttpMessageNotReadableException ex) {
+
     HttpStatus status = HttpStatus.BAD_REQUEST;
-    return ResponseEntity.status(status)
+
+    String message = "Request body is missing or malformed.";
+
+    Throwable cause = ex.getCause();
+
+    if (cause instanceof InvalidFormatException invalidFormatException) {
+      String fieldName =
+          invalidFormatException.getPath().isEmpty()
+              ? "unknown"
+              : invalidFormatException.getPath().get(0).getFieldName();
+
+      message = "Invalid value for field '" + fieldName + "': " + invalidFormatException.getValue();
+    }
+
+    return ResponseEntity.badRequest()
         .body(
             ErrorBody.builder()
                 .error("BAD_REQUEST")
-                .message("Request body is missing or malformed.")
+                .message(message)
                 .status(status.value())
                 .build());
   }
