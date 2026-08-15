@@ -20,10 +20,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Slf4j
 @Testcontainers
 public class FacadeIT {
-  @Container
-  @ServiceConnection
-  static PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>("postgres:16");
+  @Container @ServiceConnection
+  static PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16");
+
   @SneakyThrows
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
