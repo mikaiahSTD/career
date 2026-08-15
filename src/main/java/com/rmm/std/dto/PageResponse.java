@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 
 @Data
 @Builder
@@ -17,4 +18,14 @@ public class PageResponse<T> {
   private int size;
   private long totalElements;
   private int totalPages;
+
+  public static <T> PageResponse<T> from(Page<?> page, List<T> content) {
+    return PageResponse.<T>builder()
+        .content(content)
+        .page(page.getNumber())
+        .size(page.getSize())
+        .totalElements(page.getTotalElements())
+        .totalPages(page.getTotalPages())
+        .build();
+  }
 }
