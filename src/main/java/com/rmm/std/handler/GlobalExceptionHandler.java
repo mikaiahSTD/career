@@ -11,6 +11,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
@@ -223,6 +224,18 @@ public class GlobalExceptionHandler {
         .body(
             ErrorBody.builder()
                 .error("UNAUTHORIZED")
+                .message(ex.getMessage())
+                .status(status.value())
+                .build());
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorBody> handleAccessDenied(AccessDeniedException ex) {
+    HttpStatus status = HttpStatus.FORBIDDEN;
+    return ResponseEntity.status(status)
+        .body(
+            ErrorBody.builder()
+                .error("FORBIDDEN")
                 .message(ex.getMessage())
                 .status(status.value())
                 .build());
