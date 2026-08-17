@@ -35,6 +35,10 @@ public class JExam {
   @JoinColumn(name = "course_id", nullable = false)
   private JCourse course;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "semester_id", nullable = false)
+  private JSemester semester;
+
   private String title;
 
   @Column(name = "start_date")

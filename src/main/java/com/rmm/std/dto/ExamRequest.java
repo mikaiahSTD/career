@@ -19,6 +19,8 @@ public class ExamRequest {
 
   @NotNull private UUID courseId;
 
+  @NotNull private UUID semesterId;
+
   private String title;
   private OffsetDateTime startDate;
   private OffsetDateTime endDate;

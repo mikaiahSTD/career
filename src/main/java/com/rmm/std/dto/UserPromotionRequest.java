@@ -1,5 +1,6 @@
 package com.rmm.std.dto;
 
+import com.rmm.std.constant.PromotionStatus;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -18,7 +19,11 @@ public class UserPromotionRequest {
 
   @NotNull private UUID promotionId;
 
-  @Builder.Default private boolean graduated = false;
+  @Builder.Default private PromotionStatus status = PromotionStatus.IN_PROGRESS;
+
+  private OffsetDateTime startDate;
+
+  private OffsetDateTime endDate;
 
   private OffsetDateTime graduationDate;
 }

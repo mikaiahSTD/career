@@ -16,6 +16,7 @@ public class Exam {
 
   private UUID id;
   private UUID courseId;
+  private UUID semesterId;
   private String title;
   private OffsetDateTime startDate;
   private OffsetDateTime endDate;

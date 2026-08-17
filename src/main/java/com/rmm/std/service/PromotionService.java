@@ -1,5 +1,6 @@
 package com.rmm.std.service;
 
+import com.rmm.std.constant.PromotionStatus;
 import com.rmm.std.dto.PageResponse;
 import com.rmm.std.dto.PromotionRequest;
 import com.rmm.std.dto.PromotionResponse;
@@ -60,7 +61,9 @@ public class PromotionService {
   @Transactional(readOnly = true)
   public List<UserResponse> getGraduates(UUID promotionId) {
     getEntity(promotionId);
-    return userPromotionRepository.findByPromotionIdAndGraduatedTrue(promotionId).stream()
+    return userPromotionRepository
+        .findByPromotionIdAndStatus(promotionId, PromotionStatus.GRADUATED)
+        .stream()
         .map(JUserPromotion::getUser)
         .map(userMapper::toRes)
         .toList();

@@ -13,22 +13,34 @@ import org.springframework.http.ResponseEntity;
 
 class ExamIT extends AbstractControllerIT {
 
+  private String createSemesterFor(String adminToken) throws Exception {
+    String promotionId = createPromotion(adminToken);
+    return createSemester(adminToken, promotionId);
+  }
+
   @Test
   @SneakyThrows
   void createExam_asAdmin_ok() {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
+    String semesterId = createSemesterFor(admin.token());
 
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"title\":\"Midterm\",\"coefficient\":2.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"title\":\"Midterm\",\"coefficient\":2.0}"),
             admin.token());
 
     assertEquals(HttpStatus.CREATED, res.getStatusCode());
     JsonNode body = objectMapper.readTree(res.getBody());
     assertTrue(body.has("id"));
     assertEquals(courseId, body.get("courseId").asText());
+    assertEquals(semesterId, body.get("semesterId").asText());
     assertEquals("Midterm", body.get("title").asText());
   }
 
@@ -37,13 +49,19 @@ class ExamIT extends AbstractControllerIT {
   void createExam_asTeacherOwningCourse_ok() {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
+    String semesterId = createSemesterFor(admin.token());
     var teacher = registerAndLogin(Role.TEACHER);
     createCourseTeacher(admin.token(), courseId, teacher.id().toString());
 
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"title\":\"Final\",\"coefficient\":1.5}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"title\":\"Final\",\"coefficient\":1.5}"),
             teacher.token());
 
     assertEquals(HttpStatus.CREATED, res.getStatusCode());
@@ -54,12 +72,18 @@ class ExamIT extends AbstractControllerIT {
   void createExam_asTeacherNotOwningCourse_forbidden() {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
+    String semesterId = createSemesterFor(admin.token());
     var teacher = registerAndLogin(Role.TEACHER);
 
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"title\":\"Final\",\"coefficient\":1.5}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"title\":\"Final\",\"coefficient\":1.5}"),
             teacher.token());
 
     assertEquals(HttpStatus.FORBIDDEN, res.getStatusCode());
@@ -73,7 +97,32 @@ class ExamIT extends AbstractControllerIT {
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + UUID.randomUUID() + "\",\"coefficient\":1.0}"),
+            json(
+                "{\"courseId\":\""
+                    + UUID.randomUUID()
+                    + "\",\"semesterId\":\""
+                    + UUID.randomUUID()
+                    + "\",\"coefficient\":1.0}"),
+            admin.token());
+
+    assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void createExam_unknownSemester_notFound() {
+    var admin = registerAndLogin(Role.ADMIN);
+    String courseId = createCourse(admin.token());
+
+    ResponseEntity<String> res =
+        post(
+            "/exams",
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + UUID.randomUUID()
+                    + "\",\"coefficient\":1.0}"),
             admin.token());
 
     assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
@@ -84,11 +133,17 @@ class ExamIT extends AbstractControllerIT {
   void createExam_invalidCoefficient_badRequest() {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
+    String semesterId = createSemesterFor(admin.token());
 
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"coefficient\":15.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"coefficient\":15.0}"),
             admin.token());
 
     assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
@@ -102,11 +157,17 @@ class ExamIT extends AbstractControllerIT {
     var student = registerAndLogin(Role.STUDENT);
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
+    String semesterId = createSemesterFor(admin.token());
 
     ResponseEntity<String> res =
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"coefficient\":1.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"coefficient\":1.0}"),
             student.token());
 
     assertEquals(HttpStatus.FORBIDDEN, res.getStatusCode());
@@ -173,17 +234,24 @@ class ExamIT extends AbstractControllerIT {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
     String id = createExam(admin.token(), courseId);
+    String semesterId = createSemesterFor(admin.token());
 
     ResponseEntity<String> res =
         put(
             "/exams/" + id,
-            json("{\"courseId\":\"" + courseId + "\",\"title\":\"Retake\",\"coefficient\":3.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"title\":\"Retake\",\"coefficient\":3.0}"),
             admin.token());
 
     assertEquals(HttpStatus.OK, res.getStatusCode());
     JsonNode body = objectMapper.readTree(res.getBody());
     assertEquals("Retake", body.get("title").asText());
     assertEquals("3.0", body.get("coefficient").asText());
+    assertEquals(semesterId, body.get("semesterId").asText());
   }
 
   @Test
@@ -192,12 +260,18 @@ class ExamIT extends AbstractControllerIT {
     var admin = registerAndLogin(Role.ADMIN);
     String courseId = createCourse(admin.token());
     String id = createExam(admin.token(), courseId);
+    String semesterId = createSemesterFor(admin.token());
     var teacher = registerAndLogin(Role.TEACHER);
 
     ResponseEntity<String> res =
         put(
             "/exams/" + id,
-            json("{\"courseId\":\"" + courseId + "\",\"coefficient\":1.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"coefficient\":1.0}"),
             teacher.token());
 
     assertEquals(HttpStatus.FORBIDDEN, res.getStatusCode());

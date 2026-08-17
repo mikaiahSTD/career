@@ -5,8 +5,10 @@ import com.rmm.std.dto.ExamRequest;
 import com.rmm.std.dto.ExamResponse;
 import com.rmm.std.exception.NotFoundException;
 import com.rmm.std.repository.CourseRepository;
+import com.rmm.std.repository.SemesterRepository;
 import com.rmm.std.repository.model.JCourse;
 import com.rmm.std.repository.model.JExam;
+import com.rmm.std.repository.model.JSemester;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 public class ExamMapper {
 
   private final CourseRepository courseRepository;
+  private final SemesterRepository semesterRepository;
 
   public JExam toJ(Exam exam) {
     if (exam == null) {
@@ -24,9 +27,15 @@ public class ExamMapper {
         courseRepository
             .findById(exam.getCourseId())
             .orElseThrow(() -> new NotFoundException("Course not found: " + exam.getCourseId()));
+    JSemester semester =
+        semesterRepository
+            .findById(exam.getSemesterId())
+            .orElseThrow(
+                () -> new NotFoundException("Semester not found: " + exam.getSemesterId()));
     return JExam.builder()
         .id(exam.getId())
         .course(course)
+        .semester(semester)
         .title(exam.getTitle())
         .startDate(exam.getStartDate())
         .endDate(exam.getEndDate())
@@ -41,6 +50,7 @@ public class ExamMapper {
     return Exam.builder()
         .id(jExam.getId())
         .courseId(jExam.getCourse().getId())
+        .semesterId(jExam.getSemester().getId())
         .title(jExam.getTitle())
         .startDate(jExam.getStartDate())
         .endDate(jExam.getEndDate())
@@ -54,6 +64,7 @@ public class ExamMapper {
     }
     return Exam.builder()
         .courseId(req.getCourseId())
+        .semesterId(req.getSemesterId())
         .title(req.getTitle())
         .startDate(req.getStartDate())
         .endDate(req.getEndDate())
@@ -68,6 +79,7 @@ public class ExamMapper {
     return ExamResponse.builder()
         .id(jExam.getId())
         .courseId(jExam.getCourse().getId())
+        .semesterId(jExam.getSemester().getId())
         .title(jExam.getTitle())
         .startDate(jExam.getStartDate())
         .endDate(jExam.getEndDate())

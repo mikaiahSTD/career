@@ -33,7 +33,7 @@ class GraduatesExportIT extends AbstractControllerIT {
                 + student.id()
                 + "\",\"promotionId\":\""
                 + promotionId
-                + "\",\"graduated\":true}"),
+                + "\",\"status\":\"GRADUATED\"}"),
         admin.token());
 
     ResponseEntity<byte[]> res =

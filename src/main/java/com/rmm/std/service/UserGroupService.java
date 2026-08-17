@@ -30,6 +30,16 @@ public class UserGroupService {
 
   @Transactional
   public UserGroupResponse create(UserGroupRequest req) {
+    return changeGroup(req);
+  }
+
+  /**
+   * A student can change group at any time. Changing group closes the current open {@code
+   * user_group} row ({@code end_date = now()}) and inserts a new one in the same transaction — an
+   * old row is never mutated to point at another group.
+   */
+  @Transactional
+  public UserGroupResponse changeGroup(UserGroupRequest req) {
     if (!userRepository.existsById(req.getUserId())) {
       throw new NotFoundException("User not found: " + req.getUserId());
     }

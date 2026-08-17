@@ -1,7 +1,10 @@
 package com.rmm.std.repository.model;
 
+import com.rmm.std.constant.PromotionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,6 +19,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "user_promotion")
@@ -38,8 +43,16 @@ public class JUserPromotion {
   @JoinColumn(name = "promotion_id", nullable = false)
   private JPromotion promotion;
 
+  @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(nullable = false)
-  private boolean graduated;
+  private PromotionStatus status;
+
+  @Column(name = "start_date", nullable = false)
+  private OffsetDateTime startDate;
+
+  @Column(name = "end_date")
+  private OffsetDateTime endDate;
 
   @Column(name = "graduation_date")
   private OffsetDateTime graduationDate;

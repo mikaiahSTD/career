@@ -39,7 +39,9 @@ public class UserPromotionMapper {
         .id(userPromotion.getId())
         .user(user)
         .promotion(promotion)
-        .graduated(userPromotion.isGraduated())
+        .status(userPromotion.getStatus())
+        .startDate(userPromotion.getStartDate())
+        .endDate(userPromotion.getEndDate())
         .graduationDate(userPromotion.getGraduationDate())
         .build();
   }
@@ -52,7 +54,9 @@ public class UserPromotionMapper {
         .id(jUserPromotion.getId())
         .userId(jUserPromotion.getUser().getId())
         .promotionId(jUserPromotion.getPromotion().getId())
-        .graduated(jUserPromotion.isGraduated())
+        .status(jUserPromotion.getStatus())
+        .startDate(jUserPromotion.getStartDate())
+        .endDate(jUserPromotion.getEndDate())
         .graduationDate(jUserPromotion.getGraduationDate())
         .build();
   }
@@ -64,7 +68,9 @@ public class UserPromotionMapper {
     return UserPromotion.builder()
         .userId(req.getUserId())
         .promotionId(req.getPromotionId())
-        .graduated(req.isGraduated())
+        .status(req.getStatus())
+        .startDate(req.getStartDate())
+        .endDate(req.getEndDate())
         .graduationDate(req.getGraduationDate())
         .build();
   }
@@ -77,7 +83,9 @@ public class UserPromotionMapper {
         .id(jUserPromotion.getId())
         .userId(jUserPromotion.getUser().getId())
         .promotionId(jUserPromotion.getPromotion().getId())
-        .graduated(jUserPromotion.isGraduated())
+        .status(jUserPromotion.getStatus())
+        .startDate(jUserPromotion.getStartDate())
+        .endDate(jUserPromotion.getEndDate())
         .graduationDate(jUserPromotion.getGraduationDate())
         .build();
   }

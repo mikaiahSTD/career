@@ -1,6 +1,8 @@
 package com.rmm.std.endpoint.rest.controller;
 
+import com.rmm.std.constant.PromotionStatus;
 import com.rmm.std.dto.PageResponse;
+import com.rmm.std.dto.UserPromotionRepeatRequest;
 import com.rmm.std.dto.UserPromotionRequest;
 import com.rmm.std.dto.UserPromotionResponse;
 import com.rmm.std.service.UserPromotionService;
@@ -33,15 +35,21 @@ public class UserPromotionController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) UUID userId,
       @RequestParam(required = false) UUID promotionId,
-      @RequestParam(required = false) Boolean graduated) {
+      @RequestParam(required = false) PromotionStatus status) {
     return userPromotionService.list(
-        userId, promotionId, graduated, PageRequest.of(page, Math.min(size, 200)));
+        userId, promotionId, status, PageRequest.of(page, Math.min(size, 200)));
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public UserPromotionResponse create(@RequestBody @Valid UserPromotionRequest req) {
     return userPromotionService.create(req);
+  }
+
+  @PostMapping("/repeat")
+  @ResponseStatus(HttpStatus.CREATED)
+  public UserPromotionResponse repeatYear(@RequestBody @Valid UserPromotionRepeatRequest req) {
+    return userPromotionService.repeatYear(req);
   }
 
   @GetMapping("/{id}")
