@@ -796,9 +796,9 @@ paths:
             type: string
             format: uuid
         - in: query
-          name: graduated
+          name: status
           schema:
-            type: boolean
+            $ref: '#/components/schemas/PromotionStatus'
       responses:
         '200':
           description: Paged list of enrollments
@@ -824,6 +824,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserPromotionResponse'
 
+  /user-promotions/repeat:
+    post:
+      tags: [UserPromotions]
+      summary: Mark a student as repeating a year and enroll them in a new promotion
+      description: >
+        Requires role: ADMIN. Atomically transitions the student's enrollment in
+        the source promotion to status REPEATING (endDate set to now) and creates
+        a new IN_PROGRESS enrollment for the target promotion in the same
+        transaction. The old enrollment is never left IN_PROGRESS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPromotionRepeatRequest'
+      responses:
+        '201':
+          description: New enrollment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPromotionResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /user-promotions/{id}:
     parameters:
       - $ref: '#/components/parameters/IdParam'
@@ -841,7 +868,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     put:
       tags: [UserPromotions]
-      summary: Update an enrollment (e.g. mark as graduated)
+      summary: Update an enrollment (e.g. mark as graduated, transferred, dropped out)
       description: "Requires role: ADMIN."
       requestBody:
         required: true
@@ -1656,6 +1683,10 @@ components:
     UserGroupResponsePage:
       $ref: '#/components/schemas/PageEnvelope'
 
+    PromotionStatus:
+      type: string
+      enum: [IN_PROGRESS, GRADUATED, REPEATING, TRANSFERRED, DROPPED_OUT]
+
     UserPromotionRequest:
       type: object
       required: [userId, promotionId]
@@ -1666,13 +1697,34 @@ components:
         promotionId:
           type: string
           format: uuid
-        graduated:
-          type: boolean
-          default: false
+        status:
+          $ref: '#/components/schemas/PromotionStatus'
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
         graduationDate:
           type: string
           format: date-time
           nullable: true
+
+    UserPromotionRepeatRequest:
+      type: object
+      required: [userId, fromPromotionId, toPromotionId]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        fromPromotionId:
+          type: string
+          format: uuid
+        toPromotionId:
+          type: string
+          format: uuid
 
     UserPromotionResponse:
       type: object
@@ -1686,8 +1738,16 @@ components:
         promotionId:
           type: string
           format: uuid
-        graduated:
-          type: boolean
+        status:
+          $ref: '#/components/schemas/PromotionStatus'
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
         graduationDate:
           type: string
           format: date-time
@@ -1758,9 +1818,12 @@ components:
 
     ExamRequest:
       type: object
-      required: [courseId, coefficient]
+      required: [courseId, semesterId, coefficient]
       properties:
         courseId:
+          type: string
+          format: uuid
+        semesterId:
           type: string
           format: uuid
         title:
@@ -1784,6 +1847,9 @@ components:
           type: string
           format: uuid
         courseId:
+          type: string
+          format: uuid
+        semesterId:
           type: string
           format: uuid
         title:
