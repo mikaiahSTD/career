@@ -216,10 +216,17 @@ abstract class AbstractControllerIT extends FacadeIT {
   }
 
   protected String createExam(String adminToken, String courseId) throws Exception {
+    String promotionId = createPromotion(adminToken);
+    String semesterId = createSemester(adminToken, promotionId);
     return idOf(
         post(
             "/exams",
-            json("{\"courseId\":\"" + courseId + "\",\"title\":\"Midterm\",\"coefficient\":2.0}"),
+            json(
+                "{\"courseId\":\""
+                    + courseId
+                    + "\",\"semesterId\":\""
+                    + semesterId
+                    + "\",\"title\":\"Midterm\",\"coefficient\":2.0}"),
             adminToken));
   }
 

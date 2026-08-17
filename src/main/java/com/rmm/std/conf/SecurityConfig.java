@@ -69,6 +69,7 @@ public class SecurityConfig {
                         "/semesters",
                         "/user-groups",
                         "/user-promotions",
+                        "/user-promotions/repeat",
                         "/users")
                     .hasRole("ADMIN")
                     .requestMatchers(

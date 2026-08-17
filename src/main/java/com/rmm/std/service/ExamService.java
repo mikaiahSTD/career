@@ -11,6 +11,7 @@ import com.rmm.std.mapper.ExamMapper;
 import com.rmm.std.repository.CourseRepository;
 import com.rmm.std.repository.CourseTeacherRepository;
 import com.rmm.std.repository.ExamRepository;
+import com.rmm.std.repository.SemesterRepository;
 import com.rmm.std.repository.model.JExam;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,7 @@ public class ExamService {
   private final ExamRepository examRepository;
   private final CourseRepository courseRepository;
   private final CourseTeacherRepository courseTeacherRepository;
+  private final SemesterRepository semesterRepository;
   private final ExamMapper examMapper;
 
   @Transactional
@@ -33,6 +35,9 @@ public class ExamService {
     assertTeacherOwnsCourse(requester, req.getCourseId());
     if (!courseRepository.existsById(req.getCourseId())) {
       throw new NotFoundException("Course not found: " + req.getCourseId());
+    }
+    if (!semesterRepository.existsById(req.getSemesterId())) {
+      throw new NotFoundException("Semester not found: " + req.getSemesterId());
     }
     JExam saved = examRepository.save(examMapper.toJ(examMapper.toDomain(req)));
     return examMapper.toRes(saved);
@@ -57,10 +62,18 @@ public class ExamService {
     if (!courseRepository.existsById(req.getCourseId())) {
       throw new NotFoundException("Course not found: " + req.getCourseId());
     }
+    if (!semesterRepository.existsById(req.getSemesterId())) {
+      throw new NotFoundException("Semester not found: " + req.getSemesterId());
+    }
     existing.setCourse(
         courseRepository
             .findById(req.getCourseId())
             .orElseThrow(() -> new NotFoundException("Course not found: " + req.getCourseId())));
+    existing.setSemester(
+        semesterRepository
+            .findById(req.getSemesterId())
+            .orElseThrow(
+                () -> new NotFoundException("Semester not found: " + req.getSemesterId())));
     existing.setTitle(req.getTitle());
     existing.setStartDate(req.getStartDate());
     existing.setEndDate(req.getEndDate());

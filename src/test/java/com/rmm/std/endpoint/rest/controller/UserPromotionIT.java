@@ -44,12 +44,13 @@ class UserPromotionIT extends AbstractControllerIT {
     assertTrue(body.has("id"));
     assertEquals(ctx.userId(), body.get("userId").asText());
     assertEquals(ctx.promotionId(), body.get("promotionId").asText());
-    assertEquals(false, body.get("graduated").asBoolean());
+    assertEquals("IN_PROGRESS", body.get("status").asText());
+    assertNotNull(body.get("startDate"));
   }
 
   @Test
   @SneakyThrows
-  void createUserPromotion_graduatedWithoutDate_setsDate() {
+  void createUserPromotion_graduatedStatus_setsDate() {
     var admin = registerAndLogin(Role.ADMIN);
     var ctx = setup(admin.token());
 
@@ -61,12 +62,12 @@ class UserPromotionIT extends AbstractControllerIT {
                     + ctx.userId()
                     + "\",\"promotionId\":\""
                     + ctx.promotionId()
-                    + "\",\"graduated\":true}"),
+                    + "\",\"status\":\"GRADUATED\"}"),
             admin.token());
 
     assertEquals(HttpStatus.CREATED, res.getStatusCode());
     JsonNode body = objectMapper.readTree(res.getBody());
-    assertEquals(true, body.get("graduated").asBoolean());
+    assertEquals("GRADUATED", body.get("status").asText());
     assertNotNull(body.get("graduationDate"));
   }
 
@@ -162,18 +163,18 @@ class UserPromotionIT extends AbstractControllerIT {
 
   @Test
   @SneakyThrows
-  void listUserPromotions_filterByGraduated_ok() {
+  void listUserPromotions_filterByStatus_ok() {
     var admin = registerAndLogin(Role.ADMIN);
     var ctx = setup(admin.token());
     createUserPromotion(admin.token(), ctx.userId(), ctx.promotionId());
 
     ResponseEntity<String> res =
-        get("/user-promotions?graduated=false&page=0&size=20", admin.token());
+        get("/user-promotions?status=IN_PROGRESS&page=0&size=20", admin.token());
 
     assertEquals(HttpStatus.OK, res.getStatusCode());
     JsonNode content = objectMapper.readTree(res.getBody()).get("content");
     for (JsonNode node : content) {
-      assertEquals(false, node.get("graduated").asBoolean());
+      assertEquals("IN_PROGRESS", node.get("status").asText());
     }
   }
 
@@ -215,12 +216,12 @@ class UserPromotionIT extends AbstractControllerIT {
                     + ctx.userId()
                     + "\",\"promotionId\":\""
                     + ctx.promotionId()
-                    + "\",\"graduated\":true}"),
+                    + "\",\"status\":\"GRADUATED\"}"),
             admin.token());
 
     assertEquals(HttpStatus.OK, res.getStatusCode());
     JsonNode body = objectMapper.readTree(res.getBody());
-    assertEquals(true, body.get("graduated").asBoolean());
+    assertEquals("GRADUATED", body.get("status").asText());
     assertNotNull(body.get("graduationDate"));
   }
 
@@ -234,5 +235,159 @@ class UserPromotionIT extends AbstractControllerIT {
     ResponseEntity<String> res = delete("/user-promotions/" + id, admin.token());
 
     assertEquals(HttpStatus.NO_CONTENT, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_asAdmin_closesOldAndCreatesNewEnrollment() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotion1 = createPromotion(admin.token());
+    String promotion2 = createPromotion(admin.token());
+    String oldId = createUserPromotion(admin.token(), student.id().toString(), promotion1);
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + student.id()
+                    + "\",\"fromPromotionId\":\""
+                    + promotion1
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            admin.token());
+
+    assertEquals(HttpStatus.CREATED, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertEquals(promotion2, body.get("promotionId").asText());
+    assertEquals("IN_PROGRESS", body.get("status").asText());
+    assertNotNull(body.get("startDate"));
+
+    JsonNode oldEnrollment =
+        objectMapper.readTree(get("/user-promotions/" + oldId, admin.token()).getBody());
+    assertEquals("REPEATING", oldEnrollment.get("status").asText());
+    assertNotNull(oldEnrollment.get("endDate"));
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_unknownUser_notFound() {
+    var admin = registerAndLogin(Role.ADMIN);
+    String promotion1 = createPromotion(admin.token());
+    String promotion2 = createPromotion(admin.token());
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + UUID.randomUUID()
+                    + "\",\"fromPromotionId\":\""
+                    + promotion1
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            admin.token());
+
+    assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_unknownFromPromotion_notFound() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotion2 = createPromotion(admin.token());
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + student.id()
+                    + "\",\"fromPromotionId\":\""
+                    + UUID.randomUUID()
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            admin.token());
+
+    assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_noPreviousEnrollment_notFound() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotion1 = createPromotion(admin.token());
+    String promotion2 = createPromotion(admin.token());
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + student.id()
+                    + "\",\"fromPromotionId\":\""
+                    + promotion1
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            admin.token());
+
+    assertEquals(HttpStatus.NOT_FOUND, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_alreadyEnrolledInTarget_conflict() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotion1 = createPromotion(admin.token());
+    String promotion2 = createPromotion(admin.token());
+    createUserPromotion(admin.token(), student.id().toString(), promotion1);
+    createUserPromotion(admin.token(), student.id().toString(), promotion2);
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + student.id()
+                    + "\",\"fromPromotionId\":\""
+                    + promotion1
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            admin.token());
+
+    assertEquals(HttpStatus.CONFLICT, res.getStatusCode());
+  }
+
+  @Test
+  @SneakyThrows
+  void repeatYear_asStudent_forbidden() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotion1 = createPromotion(admin.token());
+    String promotion2 = createPromotion(admin.token());
+
+    ResponseEntity<String> res =
+        post(
+            "/user-promotions/repeat",
+            json(
+                "{\"userId\":\""
+                    + student.id()
+                    + "\",\"fromPromotionId\":\""
+                    + promotion1
+                    + "\",\"toPromotionId\":\""
+                    + promotion2
+                    + "\"}"),
+            student.token());
+
+    assertEquals(HttpStatus.FORBIDDEN, res.getStatusCode());
   }
 }

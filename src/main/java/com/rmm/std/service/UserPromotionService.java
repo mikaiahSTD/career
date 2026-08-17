@@ -1,6 +1,8 @@
 package com.rmm.std.service;
 
+import com.rmm.std.constant.PromotionStatus;
 import com.rmm.std.dto.PageResponse;
+import com.rmm.std.dto.UserPromotionRepeatRequest;
 import com.rmm.std.dto.UserPromotionRequest;
 import com.rmm.std.dto.UserPromotionResponse;
 import com.rmm.std.exception.ConflictException;
@@ -39,18 +41,18 @@ public class UserPromotionService {
         req.getUserId(), req.getPromotionId())) {
       throw new ConflictException("User is already enrolled in this promotion");
     }
-    if (req.isGraduated() && req.getGraduationDate() == null) {
-      req.setGraduationDate(OffsetDateTime.now());
-    }
+    applyDefaults(req);
     JUserPromotion saved =
         userPromotionRepository.save(userPromotionMapper.toJ(userPromotionMapper.toDomain(req)));
     return userPromotionMapper.toRes(saved);
   }
 
   public PageResponse<UserPromotionResponse> list(
-      UUID userId, UUID promotionId, Boolean graduated, Pageable pageable) {
+      UUID userId, UUID promotionId, PromotionStatus status, Pageable pageable) {
     Page<JUserPromotion> page =
-        userPromotionRepository.search(userId, promotionId, graduated, pageable);
+        status == null
+            ? userPromotionRepository.searchWithoutStatus(userId, promotionId, pageable)
+            : userPromotionRepository.search(userId, promotionId, status, pageable);
     return PageResponse.from(page, page.map(userPromotionMapper::toRes).toList());
   }
 
@@ -76,11 +78,21 @@ public class UserPromotionService {
             .findById(req.getPromotionId())
             .orElseThrow(
                 () -> new NotFoundException("Promotion not found: " + req.getPromotionId())));
-    existing.setGraduated(req.isGraduated());
-    if (req.isGraduated() && req.getGraduationDate() == null) {
+    if (req.getStatus() != null) {
+      existing.setStatus(req.getStatus());
+    }
+    if (req.getStartDate() != null) {
+      existing.setStartDate(req.getStartDate());
+    }
+    if (req.getEndDate() != null) {
+      existing.setEndDate(req.getEndDate());
+    }
+    if (req.getStatus() == PromotionStatus.GRADUATED && req.getGraduationDate() == null) {
       req.setGraduationDate(OffsetDateTime.now());
     }
-    existing.setGraduationDate(req.getGraduationDate());
+    if (req.getGraduationDate() != null) {
+      existing.setGraduationDate(req.getGraduationDate());
+    }
     return userPromotionMapper.toRes(userPromotionRepository.save(existing));
   }
 
@@ -88,6 +100,68 @@ public class UserPromotionService {
   public void delete(UUID id) {
     getEntity(id);
     userPromotionRepository.deleteById(id);
+  }
+
+  /**
+   * A student who repeats a year gets a new {@code user_promotion} row for the target promotion.
+   * The previous row is transitioned to {@code REPEATING} with {@code endDate = now()} in the same
+   * transaction, so it is never left as {@code IN_PROGRESS} after the student has moved on.
+   */
+  @Transactional
+  public UserPromotionResponse repeatYear(UserPromotionRepeatRequest req) {
+    if (!userRepository.existsById(req.getUserId())) {
+      throw new NotFoundException("User not found: " + req.getUserId());
+    }
+    if (!promotionRepository.existsById(req.getFromPromotionId())) {
+      throw new NotFoundException("Promotion not found: " + req.getFromPromotionId());
+    }
+    if (!promotionRepository.existsById(req.getToPromotionId())) {
+      throw new NotFoundException("Promotion not found: " + req.getToPromotionId());
+    }
+    JUserPromotion previous =
+        userPromotionRepository
+            .findByUserIdAndPromotionId(req.getUserId(), req.getFromPromotionId())
+            .orElseThrow(
+                () ->
+                    new NotFoundException(
+                        "No enrollment found for user "
+                            + req.getUserId()
+                            + " in promotion "
+                            + req.getFromPromotionId()));
+    if (userPromotionRepository.existsByUserIdAndPromotionId(
+        req.getUserId(), req.getToPromotionId())) {
+      throw new ConflictException("User is already enrolled in this promotion");
+    }
+    previous.setStatus(PromotionStatus.REPEATING);
+    previous.setEndDate(OffsetDateTime.now());
+    userPromotionRepository.save(previous);
+
+    JUserPromotion next =
+        JUserPromotion.builder()
+            .user(previous.getUser())
+            .promotion(
+                promotionRepository
+                    .findById(req.getToPromotionId())
+                    .orElseThrow(
+                        () ->
+                            new NotFoundException(
+                                "Promotion not found: " + req.getToPromotionId())))
+            .status(PromotionStatus.IN_PROGRESS)
+            .startDate(OffsetDateTime.now())
+            .build();
+    return userPromotionMapper.toRes(userPromotionRepository.save(next));
+  }
+
+  private void applyDefaults(UserPromotionRequest req) {
+    if (req.getStatus() == null) {
+      req.setStatus(PromotionStatus.IN_PROGRESS);
+    }
+    if (req.getStartDate() == null) {
+      req.setStartDate(OffsetDateTime.now());
+    }
+    if (req.getStatus() == PromotionStatus.GRADUATED && req.getGraduationDate() == null) {
+      req.setGraduationDate(OffsetDateTime.now());
+    }
   }
 
   private JUserPromotion getEntity(UUID id) {

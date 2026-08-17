@@ -92,7 +92,11 @@ class UserGroupIT extends AbstractControllerIT {
     JsonNode second =
         objectMapper.readTree(get("/user-groups/" + secondId, admin.token()).getBody());
     assertEquals(user.id().toString(), second.get("userId").asText());
+    assertEquals(group2, second.get("groupId").asText());
+    assertNotNull(second.get("startDate"));
+    assertTrue(second.get("endDate").isNull());
     JsonNode first = objectMapper.readTree(get("/user-groups/" + firstId, admin.token()).getBody());
+    assertEquals(group1, first.get("groupId").asText());
     assertNotNull(first.get("endDate"));
   }
 
