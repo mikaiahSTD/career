@@ -1,12 +1,20 @@
 CREATE TYPE "role" AS ENUM (
-    'teacher',
-    'student',
-    'admin'
+    'TEACHER',
+    'STUDENT',
+    'ADMIN'
 );
 
 CREATE TYPE "specialization" AS ENUM (
-    'el',
-    'tn'
+    'EL',
+    'TN'
+);
+
+CREATE TYPE "promotion_status" AS ENUM (
+    'IN_PROGRESS',
+    'GRADUATED',
+    'REPEATING',
+    'TRANSFERRED',
+    'DROPPED_OUT'
 );
 
 CREATE TABLE IF NOT EXISTS "user" (
@@ -15,6 +23,7 @@ CREATE TABLE IF NOT EXISTS "user" (
     "firstname" VARCHAR(255),
     "lastname" VARCHAR(255),
     "email" VARCHAR(255) NOT NULL UNIQUE,
+    "password" VARCHAR(255) NOT NULL,
     "role" role NOT NULL,
     PRIMARY KEY ("id")
 );
@@ -94,7 +103,9 @@ CREATE TABLE IF NOT EXISTS "user_promotion" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "promotion_id" UUID NOT NULL,
-    "graduated" BOOLEAN NOT NULL DEFAULT FALSE,
+    "status" promotion_status NOT NULL DEFAULT 'IN_PROGRESS',
+    "start_date" TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "end_date" TIMESTAMPTZ,
     "graduation_date" TIMESTAMPTZ,
     PRIMARY KEY ("id"),
     UNIQUE ("user_id", "promotion_id"),
@@ -134,13 +145,16 @@ CREATE TABLE IF NOT EXISTS "course_group" (
 CREATE TABLE IF NOT EXISTS "exam" (
     "id" UUID NOT NULL,
     "course_id" UUID NOT NULL,
+    "semester_id" UUID NOT NULL,
     "title" VARCHAR(255),
     "start_date" TIMESTAMPTZ DEFAULT now(),
     "end_date" TIMESTAMPTZ DEFAULT now(),
     "coefficient" NUMERIC(3,2) NOT NULL,
     PRIMARY KEY ("id"),
     FOREIGN KEY ("course_id") REFERENCES "course"("id")
-        ON UPDATE CASCADE ON DELETE CASCADE
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY ("semester_id") REFERENCES "semester"("id")
+        ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS "grade" (
