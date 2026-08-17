@@ -1,9 +1,0 @@
-ALTER TYPE "role" RENAME VALUE 'teacher' TO 'TEACHER';
-ALTER TYPE "role" RENAME VALUE 'student' TO 'STUDENT';
-ALTER TYPE "role" RENAME VALUE 'admin' TO 'ADMIN';
-
-ALTER TYPE "specialization" RENAME VALUE 'el' TO 'EL';
-ALTER TYPE "specialization" RENAME VALUE 'tn' TO 'TN';
-
-ALTER TABLE "user"
-ADD COLUMN "password" VARCHAR(255) NOT NULL;
