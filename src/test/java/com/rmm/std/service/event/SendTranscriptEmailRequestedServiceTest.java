@@ -55,7 +55,27 @@ class SendTranscriptEmailRequestedServiceTest {
             semesterRepository,
             pdfWriter,
             bucketComponent,
-            mailer);
+            mailer,
+            Duration.ofMinutes(5));
+  }
+
+  @Test
+  void accept_usesConfiguredPresignDuration() throws Exception {
+    var studentId = UUID.randomUUID();
+    var student = student(studentId, "john-" + studentId + "@test.com");
+    var pdf = File.createTempFile("transcript-", ".pdf");
+    var presignedUrl = new URL("https://bucket.example.com/transcript.pdf");
+
+    when(userRepository.findById(studentId)).thenReturn(Optional.of(student));
+    when(gradeRepository.findByStudentId(studentId)).thenReturn(List.of());
+    when(pdfWriter.write(any(), any(), any())).thenReturn(pdf);
+    when(bucketComponent.presign(any(), any(Duration.class))).thenReturn(presignedUrl);
+
+    service.accept(SendTranscriptEmailRequested.builder().studentId(studentId).build());
+
+    ArgumentCaptor<Duration> durationCaptor = ArgumentCaptor.forClass(Duration.class);
+    verify(bucketComponent).presign(any(String.class), durationCaptor.capture());
+    assertEquals(Duration.ofMinutes(5), durationCaptor.getValue());
   }
 
   @Test
