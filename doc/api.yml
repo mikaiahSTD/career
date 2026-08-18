@@ -66,8 +66,10 @@ paths:
       summary: Log in and obtain a JWT bearer token
       description: >
         Exchanges valid credentials (email + password) for a signed JWT.
-        The token must then be sent as an Authorization header
-        `Authorization: Bearer <token>` on all other endpoints.
+        The token is also set as an HttpOnly cookie (`jwt_token`) for
+        browser-based UI usage. The token must be sent as an Authorization
+        header `Authorization: Bearer <token>` or via the cookie on all
+        other endpoints.
       requestBody:
         required: true
         content:
@@ -77,10 +79,48 @@ paths:
       responses:
         '200':
           description: JWT issued
+          headers:
+            Set-Cookie:
+              description: HttpOnly JWT cookie
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out and revoke the current token
+      description: >
+        Revokes the JWT token (blacklists it) and clears the cookie.
+        Works with both Bearer header and cookie-based tokens.
+      responses:
+        '200':
+          description: Logged out successfully
+          headers:
+            Set-Cookie:
+              description: Cleared JWT cookie
+              schema:
+                type: string
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current authenticated user's profile
+      description: >
+        Returns the profile of the currently authenticated user.
+        Requires a valid JWT token (via header or cookie).
+      responses:
+        '200':
+          description: The current user's profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -357,6 +397,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserResponse'
+
+  /promotions/{id}/students-grades:
+    parameters:
+      - $ref: '#/components/parameters/IdParam'
+    get:
+      tags: [Promotions]
+      summary: Get all students and their grades for a promotion
+      description: >
+        Requires role: ADMIN. Returns a comprehensive view of every enrolled
+        student's grades across all courses and exams in the promotion.
+      responses:
+        '200':
+          description: Students with their grades
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionStudentsGradesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /semesters:
     get:
@@ -1268,6 +1327,33 @@ paths:
                 items:
                   $ref: '#/components/schemas/GradeHistoryResponse'
 
+  /students/{studentId}/degrees:
+    parameters:
+      - name: studentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Users]
+      summary: Get a student's degree status
+      description: >
+        Requires role: ADMIN, or the STUDENT viewing their own degree.
+        Returns the student's course grades, total credits earned, and
+        whether they have passed all requirements.
+      responses:
+        '200':
+          description: Degree status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DegreeResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /students/{studentId}/transcript/send:
     parameters:
       - name: studentId
@@ -1336,6 +1422,47 @@ paths:
               schema:
                 type: string
 
+  /ui:
+    get:
+      tags: [UI]
+      summary: Server-rendered dashboard page
+      description: >
+        Public endpoint. Renders the main dashboard HTML page with
+        promotions list and student grades section.
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /ui/login:
+    get:
+      tags: [UI]
+      summary: Server-rendered login page
+      description: Public endpoint. Renders the login form.
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /ui/signup:
+    get:
+      tags: [UI]
+      summary: Server-rendered signup page
+      description: Public endpoint. Renders the registration form.
+      responses:
+        '200':
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
 components:
 
   securitySchemes:
@@ -1387,6 +1514,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
 
@@ -1409,6 +1542,11 @@ components:
         type:
           type: string
           example: Bearer
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/Role'
 
     ErrorResponse:
       type: object
@@ -1978,3 +2116,92 @@ components:
           type: integer
         totalPages:
           type: integer
+
+    DegreeResponse:
+      type: object
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        courseGrades:
+          type: array
+          items:
+            $ref: '#/components/schemas/DegreeCourseGrade'
+        totalCredits:
+          type: integer
+        requiredCreditsPerSemester:
+          type: integer
+        requiredCreditsPerYear:
+          type: integer
+        passed:
+          type: boolean
+
+    DegreeCourseGrade:
+      type: object
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        courseTitle:
+          type: string
+        credits:
+          type: integer
+        latestGrade:
+          type: number
+          format: double
+        examId:
+          type: string
+          format: uuid
+        passed:
+          type: boolean
+
+    PromotionStudentsGradesResponse:
+      type: object
+      properties:
+        promotionId:
+          type: string
+          format: uuid
+        promotionLabel:
+          type: string
+        startYear:
+          type: integer
+        students:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentWithGrades'
+
+    StudentWithGrades:
+      type: object
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+        courseGrades:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotionCourseGrade'
+
+    PromotionCourseGrade:
+      type: object
+      properties:
+        courseId:
+          type: string
+          format: uuid
+        courseTitle:
+          type: string
+        credits:
+          type: integer
+        examTitle:
+          type: string
+        grade:
+          type: number
+          format: double
+        examId:
+          type: string
+          format: uuid

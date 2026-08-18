@@ -78,4 +78,21 @@ public interface GradeRepository extends JpaRepository<JGrade, UUID> {
       """)
   List<JGrade> findGradesForStudentInSemester(
       @Param("studentId") UUID studentId, @Param("semesterNumber") Integer semesterNumber);
+
+  @Query(
+      """
+      select g from JGrade g
+      where g.student.id = :studentId
+      """)
+  List<JGrade> findByStudentIdForDegree(@Param("studentId") UUID studentId);
+
+  @Query(
+      """
+      select g from JGrade g
+      join g.exam e
+      join g.student u
+      join JUserPromotion up on up.user = u
+      where up.promotion.id = :promotionId
+      """)
+  List<JGrade> findGradesByPromotionId(@Param("promotionId") UUID promotionId);
 }

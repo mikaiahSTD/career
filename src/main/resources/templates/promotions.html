@@ -1,17 +1,188 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Promotions</title>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Promotions</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" th:href="@{/ui}">Career Management</a>
+    <div class="nav-right">
+      <span id="user-info" class="text-muted"></span>
+      <button id="logout-btn" class="btn btn-danger">Logout</button>
+    </div>
+  </nav>
+
+  <main class="container">
     <h1>Promotions</h1>
-    <ul>
-      <li th:each="promotionId : ${promotions}">
-        <a th:href="@{/promotions/{id}/graduates/export(id=${promotionId})}">
-          Export graduates of <span th:text="${promotionId}"></span>
-        </a>
-      </li>
-    </ul>
-  </body>
+    <div id="promotions-container">
+      <p class="no-data">Loading...</p>
+    </div>
+  </main>
+
+  <script th:src="@{/js/ui.js}"></script>
+  <script>
+    CareerUI.Auth.requireAuth().then(function (me) {
+      if (!me) {
+        return;
+      }
+
+      var info = document.getElementById('user-info');
+      if (info) {
+        info.innerHTML = 'Signed in as <span class="role-badge">' + CareerUI.esc(me.role || 'USER') + '</span>';
+      }
+
+      document.getElementById('logout-btn').addEventListener('click', function () {
+        CareerUI.Auth.logout();
+      });
+
+      loadPromotions();
+    });
+
+    function loadPromotions() {
+      var container = document.getElementById('promotions-container');
+      CareerUI.apiJson('/promotions?page=0&size=100')
+        .then(function (data) {
+          container.innerHTML = '';
+          var promotions = data && data.content ? data.content : [];
+          if (promotions.length === 0) {
+            container.innerHTML = '<p class="no-data">No promotions found.</p>';
+            return;
+          }
+          promotions.forEach(function (p) {
+            container.appendChild(buildPromotion(p));
+          });
+        })
+        .catch(function (err) {
+          container.innerHTML = '<p class="no-data">' + CareerUI.esc(err.message) + '</p>';
+        });
+    }
+
+    function buildPromotion(p) {
+      var card = document.createElement('div');
+      card.className = 'promotion';
+
+      var header = document.createElement('div');
+      header.className = 'promotion-header';
+      header.innerHTML =
+        '<span>' + CareerUI.esc(p.label || 'Promotion') +
+        ' (Start: ' + CareerUI.esc(p.startYear || 'N/A') + ')</span>' +
+        '<span class="chevron">&#9662;</span>';
+      card.appendChild(header);
+
+      var body = document.createElement('div');
+      body.className = 'promotion-body';
+      body.innerHTML = '<p class="no-data">Loading students...</p>';
+      card.appendChild(body);
+
+      header.addEventListener('click', function () {
+        var isOpen = body.classList.toggle('open');
+        header.querySelector('.chevron').innerHTML = isOpen ? '&#9652;' : '&#9662;';
+        if (isOpen && !body.dataset.loaded) {
+          loadStudentsGrades(p.id, body);
+        }
+      });
+
+      return card;
+    }
+
+    function loadStudentsGrades(promotionId, body) {
+      CareerUI.apiJson('/promotions/' + promotionId + '/students-grades')
+        .then(function (data) {
+          body.dataset.loaded = 'true';
+          body.innerHTML = '';
+
+          var toolbar = document.createElement('div');
+          toolbar.style.marginBottom = '12px';
+
+          var downloadBtn = document.createElement('button');
+          downloadBtn.className = 'btn btn-primary';
+          downloadBtn.textContent = 'Download Graduates (Excel)';
+          downloadBtn.addEventListener('click', function () {
+            downloadGraduates(promotionId);
+          });
+          toolbar.appendChild(downloadBtn);
+          body.appendChild(toolbar);
+
+          var students = data && data.students ? data.students : [];
+          if (students.length === 0) {
+            body.appendChild(noData('No students enrolled in this promotion.'));
+            return;
+          }
+
+          students.forEach(function (s) {
+            body.appendChild(buildStudent(s));
+          });
+        })
+        .catch(function (err) {
+          body.innerHTML = '<p class="no-data">' + CareerUI.esc(err.message) + '</p>';
+        });
+    }
+
+    function buildStudent(s) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'student';
+
+      var name = document.createElement('h3');
+      name.textContent = (s.firstname || '') + ' ' + (s.lastname || '');
+      wrapper.appendChild(name);
+
+      var email = document.createElement('div');
+      email.className = 'email';
+      email.textContent = s.email || '';
+      wrapper.appendChild(email);
+
+      var grades = s.courseGrades || [];
+      if (grades.length === 0) {
+        wrapper.appendChild(noData('No grades recorded yet.'));
+        return wrapper;
+      }
+
+      var table = document.createElement('table');
+      table.className = 'table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Course', 'Exam', 'Grade /20', 'Credits'].forEach(function (cell) {
+        var th = document.createElement('th');
+        th.textContent = cell;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      grades.forEach(function (g) {
+        var row = document.createElement('tr');
+        [g.courseTitle, g.examTitle, g.grade, g.credits].forEach(function (cell) {
+          var td = document.createElement('td');
+          td.textContent = cell == null ? '' : String(cell);
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      wrapper.appendChild(table);
+      return wrapper;
+    }
+
+    function noData(text) {
+      var p = document.createElement('p');
+      p.className = 'no-data';
+      p.textContent = text;
+      return p;
+    }
+
+    function downloadGraduates(promotionId) {
+      CareerUI.apiBlob('/promotions/' + promotionId + '/graduates/export')
+        .then(function (blob) {
+          CareerUI.downloadBlob(blob, 'graduates-' + promotionId + '.xlsx');
+        })
+        .catch(function (err) {
+          alert('Error: ' + err.message);
+        });
+    }
+  </script>
+</body>
 </html>

@@ -3,6 +3,7 @@ package com.rmm.std.endpoint.rest.controller;
 import com.rmm.std.dto.PageResponse;
 import com.rmm.std.dto.PromotionRequest;
 import com.rmm.std.dto.PromotionResponse;
+import com.rmm.std.dto.PromotionStudentsGradesResponse;
 import com.rmm.std.dto.UserResponse;
 import com.rmm.std.service.PromotionService;
 import jakarta.validation.Valid;
@@ -60,5 +61,10 @@ public class PromotionController {
   @GetMapping("/{id}/graduates")
   public List<UserResponse> getGraduates(@PathVariable UUID id) {
     return promotionService.getGraduates(id);
+  }
+
+  @GetMapping("/{id}/students-grades")
+  public PromotionStudentsGradesResponse getStudentsGrades(@PathVariable UUID id) {
+    return promotionService.getStudentsGrades(id);
   }
 }
