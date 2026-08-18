@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ public class JwtService {
         userDetails.getAuthorities().stream().findFirst().map(Object::toString).orElse("");
 
     return Jwts.builder()
+        .id(UUID.randomUUID().toString())
         .subject(userDetails.getUsername())
         .claim("role", role)
         .issuedAt(now)

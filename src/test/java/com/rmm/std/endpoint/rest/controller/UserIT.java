@@ -33,6 +33,19 @@ class UserIT extends AbstractControllerIT {
 
   @Test
   @SneakyThrows
+  void createUser_withAdminRole_asAdmin_ok() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var req = randomUser(Role.ADMIN);
+
+    ResponseEntity<String> res = post("/users", json(req), admin.token());
+
+    assertEquals(HttpStatus.CREATED, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertEquals("ADMIN", body.get("role").asText());
+  }
+
+  @Test
+  @SneakyThrows
   void createUser_duplicateEmail_conflict() {
     var admin = registerAndLogin(Role.ADMIN);
     var req = randomUser(Role.STUDENT);

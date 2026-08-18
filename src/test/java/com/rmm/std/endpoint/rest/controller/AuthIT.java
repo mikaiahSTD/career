@@ -63,6 +63,32 @@ class AuthIT extends FacadeIT {
 
   @Test
   @SneakyThrows
+  void register_withAdminRole_savedAsStudent() {
+    UserRequest req = randomUser();
+    req.setRole(Role.ADMIN);
+
+    ResponseEntity<String> res = post("/auth/register", json(req), null);
+
+    assertEquals(HttpStatus.OK, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertEquals("STUDENT", body.get("role").asText());
+  }
+
+  @Test
+  @SneakyThrows
+  void register_withTeacherRole_savedAsStudent() {
+    UserRequest req = randomUser();
+    req.setRole(Role.TEACHER);
+
+    ResponseEntity<String> res = post("/auth/register", json(req), null);
+
+    assertEquals(HttpStatus.OK, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertEquals("STUDENT", body.get("role").asText());
+  }
+
+  @Test
+  @SneakyThrows
   void register_duplicateEmail_conflict() {
     UserRequest req = randomUser();
     post("/auth/register", json(req), null);
@@ -131,6 +157,32 @@ class AuthIT extends FacadeIT {
 
   @Test
   @SneakyThrows
+  void register_shortPassword_badRequest() {
+    UserRequest req = randomUser();
+    req.setPassword("Ab1");
+
+    ResponseEntity<String> res = post("/auth/register", json(req), null);
+
+    assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertTrue(body.get("details").has("password"));
+  }
+
+  @Test
+  @SneakyThrows
+  void register_weakPassword_badRequest() {
+    UserRequest req = randomUser();
+    req.setPassword("abcdefgh");
+
+    ResponseEntity<String> res = post("/auth/register", json(req), null);
+
+    assertEquals(HttpStatus.BAD_REQUEST, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertTrue(body.get("details").has("password"));
+  }
+
+  @Test
+  @SneakyThrows
   void register_blankRef_badRequest() {
     UserRequest req = randomUser();
     req.setRef("");
@@ -160,7 +212,7 @@ class AuthIT extends FacadeIT {
   void register_invalidRole_badRequest() {
     String body =
         "{\"ref\":\"ref-invalid-role\",\"email\":\"invalid-role@test.com\","
-            + "\"password\":\"secret123\",\"role\":\"PRINCIPAL\"}";
+            + "\"password\":\"Secret123\",\"role\":\"PRINCIPAL\"}";
 
     ResponseEntity<String> res = post("/auth/register", body, null);
 
@@ -343,7 +395,7 @@ class AuthIT extends FacadeIT {
         .firstname("John")
         .lastname("Doe")
         .email("john-" + suffix + "@test.com")
-        .password("p@ssw0rd-" + suffix)
+        .password("P@ssw0rd-" + suffix)
         .role(Role.STUDENT)
         .build();
   }

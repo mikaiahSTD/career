@@ -4,9 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.rmm.std.constant.Role;
+import com.rmm.std.conf.EnvConf;
 import com.rmm.std.dto.LoginRequest;
-import com.rmm.std.dto.UserRequest;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -87,11 +86,11 @@ class AuthCookieIT extends AbstractControllerIT {
   @Test
   @SneakyThrows
   void logout_revokesBearerToken() {
-    UserRequest user = randomUser(Role.ADMIN);
-    assertEquals(HttpStatus.OK, post("/auth/register", json(user), null).getStatusCode());
-
     ResponseEntity<String> login =
-        post("/auth/login", json(new LoginRequest(user.getEmail(), user.getPassword())), null);
+        post(
+            "/auth/login",
+            json(new LoginRequest(EnvConf.ADMIN_EMAIL, EnvConf.ADMIN_PASSWORD)),
+            null);
     assertEquals(HttpStatus.OK, login.getStatusCode());
     String token = objectMapper.readTree(login.getBody()).get("token").asText();
 
@@ -103,11 +102,11 @@ class AuthCookieIT extends AbstractControllerIT {
   }
 
   private String loginAndExtractCookie() throws Exception {
-    UserRequest user = randomUser(Role.ADMIN);
-    assertEquals(HttpStatus.OK, post("/auth/register", json(user), null).getStatusCode());
-
     ResponseEntity<String> login =
-        post("/auth/login", json(new LoginRequest(user.getEmail(), user.getPassword())), null);
+        post(
+            "/auth/login",
+            json(new LoginRequest(EnvConf.ADMIN_EMAIL, EnvConf.ADMIN_PASSWORD)),
+            null);
     assertEquals(HttpStatus.OK, login.getStatusCode());
 
     String joined = joinSetCookies(login);
