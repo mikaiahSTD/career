@@ -110,4 +110,12 @@ public class UserService implements UserDetailsService {
         .findById(id)
         .orElseThrow(() -> new NotFoundException("User not found: " + id));
   }
+
+  public User findByEmail(String email) {
+    JUser jUser =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new NotFoundException("User not found with email: " + email));
+    return userMapper.toUser(jUser);
+  }
 }

@@ -40,6 +40,14 @@ public class JwtService {
         .compact();
   }
 
+  public long getExpirationMs() {
+    return expirationMs;
+  }
+
+  public Date extractExpiration(String token) {
+    return extractClaim(token, Claims::getExpiration);
+  }
+
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
   }
