@@ -20,11 +20,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  private static final String HEADER = "Authorization";
-  private static final String PREFIX = "Bearer ";
-
   private final JwtService jwtService;
   private final UserDetailsService userDetailsService;
+  private final TokenResolver tokenResolver;
+  private final TokenBlacklistService tokenBlacklistService;
 
   @Override
   protected void doFilterInternal(
@@ -33,14 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
 
-    String authHeader = request.getHeader(HEADER);
+    String token = tokenResolver.resolve(request);
 
-    if (authHeader == null || !authHeader.startsWith(PREFIX)) {
+    if (token == null || tokenBlacklistService.isRevoked(token)) {
       filterChain.doFilter(request, response);
       return;
     }
-
-    String token = authHeader.substring(PREFIX.length());
 
     try {
       String username = jwtService.extractUsername(token);

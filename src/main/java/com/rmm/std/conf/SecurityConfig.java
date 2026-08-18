@@ -4,18 +4,21 @@ import com.rmm.std.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @RequiredArgsConstructor
@@ -43,11 +46,26 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
 
-    http.csrf(AbstractHttpConfigurer::disable)
+    http.csrf(
+            csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                    .ignoringRequestMatchers(
+                        new AntPathRequestMatcher("/auth/login"),
+                        new AntPathRequestMatcher("/auth/register"),
+                        new AntPathRequestMatcher("/auth/logout"),
+                        request -> {
+                          String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+                          return authorization != null && authorization.startsWith("Bearer ");
+                        }))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers("/auth/register")
+                    .permitAll()
+                    .requestMatchers("/auth/logout")
+                    .permitAll()
+                    .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico")
                     .permitAll()
                     .requestMatchers("/ping", "/auth/login")
                     .anonymous()
@@ -55,6 +73,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/users/me/grades")
                     .hasRole("STUDENT")
+                    .requestMatchers(HttpMethod.GET, "/students/*/degrees")
+                    .hasAnyRole("STUDENT", "ADMIN")
                     .requestMatchers(HttpMethod.POST, "/students/*/transcript/send")
                     .hasAnyRole("STUDENT", "ADMIN")
                     .requestMatchers(
@@ -105,6 +125,7 @@ public class SecurityConfig {
                         HttpMethod.GET,
                         "/promotions/*/graduates/export",
                         "/promotions/*/graduates",
+                        "/promotions/*/students-grades",
                         "/ui/promotions",
                         "/user-promotions",
                         "/user-promotions/*",
@@ -143,6 +164,10 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(HttpMethod.GET, "/user-groups/*")
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+                    .requestMatchers("/ui/login", "/ui/signup")
+                    .anonymous()
+                    .requestMatchers("/ui")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .authenticationProvider(authenticationProvider)
