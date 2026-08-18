@@ -95,6 +95,7 @@
           body.innerHTML = '';
 
           var toolbar = document.createElement('div');
+          toolbar.className = 'toolbar';
           toolbar.style.marginBottom = '12px';
 
           var downloadBtn = document.createElement('button');
@@ -175,12 +176,53 @@
     }
 
     function downloadGraduates(promotionId) {
-      CareerUI.apiBlob('/promotions/' + promotionId + '/graduates/export')
+      var toolbar = document.querySelector('#promotions-container .promotion .promotion-body.open .toolbar');
+      var status = document.createElement('span');
+      status.className = 'text-muted';
+      status.textContent = ' Generating file...';
+      if (toolbar) {
+        toolbar.appendChild(status);
+      }
+      CareerUI.api('/promotions/' + promotionId + '/graduates/export', { method: 'POST' })
+        .then(function () {
+          pollExport(promotionId, status, 0);
+        })
+        .catch(function (err) {
+          if (status) {
+            status.textContent = '';
+          }
+          alert('Error: ' + err.message);
+        });
+    }
+
+    function pollExport(promotionId, status, attempts) {
+      if (attempts > 30) {
+        if (status) {
+          status.textContent = ' Taking too long, please try again.';
+        }
+        return;
+      }
+      CareerUI.api('/promotions/' + promotionId + '/graduates/export')
+        .then(function (res) {
+          return res.blob();
+        })
         .then(function (blob) {
+          if (status) {
+            status.textContent = '';
+          }
           CareerUI.downloadBlob(blob, 'graduates-' + promotionId + '.xlsx');
         })
         .catch(function (err) {
-          alert('Error: ' + err.message);
+          if (err.status === 404) {
+            setTimeout(function () {
+              pollExport(promotionId, status, attempts + 1);
+            }, 2000);
+          } else {
+            if (status) {
+              status.textContent = '';
+            }
+            alert('Error: ' + err.message);
+          }
         });
     }
   </script>

@@ -16,13 +16,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@AllArgsConstructor
 public class SendTranscriptEmailRequestedService implements Consumer<SendTranscriptEmailRequested> {
 
   private final UserRepository userRepository;
@@ -31,6 +30,24 @@ public class SendTranscriptEmailRequestedService implements Consumer<SendTranscr
   private final PdfWriter pdfWriter;
   private final BucketComponent bucketComponent;
   private final Mailer mailer;
+  private final Duration presignDuration;
+
+  public SendTranscriptEmailRequestedService(
+      UserRepository userRepository,
+      GradeRepository gradeRepository,
+      SemesterRepository semesterRepository,
+      PdfWriter pdfWriter,
+      BucketComponent bucketComponent,
+      Mailer mailer,
+      @Value("${app.s3.presign-duration}") Duration presignDuration) {
+    this.userRepository = userRepository;
+    this.gradeRepository = gradeRepository;
+    this.semesterRepository = semesterRepository;
+    this.pdfWriter = pdfWriter;
+    this.bucketComponent = bucketComponent;
+    this.mailer = mailer;
+    this.presignDuration = presignDuration;
+  }
 
   @Override
   @Transactional
@@ -45,7 +62,7 @@ public class SendTranscriptEmailRequestedService implements Consumer<SendTranscr
     var pdf = pdfWriter.write(buildTitle(student), header(), rows(grades));
     var bucketKey = "transcripts/" + student.getId() + "/" + pdf.getName();
     bucketComponent.upload(pdf, bucketKey);
-    var presignedUrl = bucketComponent.presign(bucketKey, Duration.ofMinutes(5));
+    var presignedUrl = bucketComponent.presign(bucketKey, presignDuration);
 
     mailer.accept(
         new Email(
@@ -102,7 +119,9 @@ public class SendTranscriptEmailRequestedService implements Consumer<SendTranscr
         + student.getLastname()
         + ",</p>"
         + "<p>Your transcript is available. Download it from the link below "
-        + "(valid for 5 minutes):</p>"
+        + "(valid for "
+        + presignDuration.toMinutes()
+        + " minutes):</p>"
         + "<p><a href=\""
         + presignedUrl
         + "\">Download transcript</a></p>"

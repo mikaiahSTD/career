@@ -1,6 +1,8 @@
 package com.rmm.std.file.excel;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -12,19 +14,32 @@ public class ExcelWriter {
 
   public byte[] write(List<List<String>> rows) throws IOException {
     try (var workbook = new XSSFWorkbook()) {
-      var sheet = workbook.createSheet("Graduates");
-
-      for (int r = 0; r < rows.size(); r++) {
-        XSSFRow row = sheet.createRow(r);
-        List<String> cells = rows.get(r);
-        for (int c = 0; c < cells.size(); c++) {
-          row.createCell(c).setCellValue(cells.get(c));
-        }
-      }
-
+      fill(workbook, rows);
       var out = new ByteArrayOutputStream();
       workbook.write(out);
       return out.toByteArray();
+    }
+  }
+
+  public File writeToFile(List<List<String>> rows) throws IOException {
+    try (var workbook = new XSSFWorkbook()) {
+      fill(workbook, rows);
+      var file = File.createTempFile("graduates-", ".xlsx");
+      try (var out = new FileOutputStream(file)) {
+        workbook.write(out);
+      }
+      return file;
+    }
+  }
+
+  private void fill(XSSFWorkbook workbook, List<List<String>> rows) {
+    var sheet = workbook.createSheet("Graduates");
+    for (int r = 0; r < rows.size(); r++) {
+      XSSFRow row = sheet.createRow(r);
+      List<String> cells = rows.get(r);
+      for (int c = 0; c < cells.size(); c++) {
+        row.createCell(c).setCellValue(cells.get(c));
+      }
     }
   }
 }
