@@ -17,6 +17,8 @@ public interface UserPromotionRepository extends JpaRepository<JUserPromotion, U
 
   List<JUserPromotion> findByPromotionIdAndStatus(UUID promotionId, PromotionStatus status);
 
+  List<JUserPromotion> findByPromotionId(UUID promotionId);
+
   boolean existsByUserIdAndPromotionId(UUID userId, UUID promotionId);
 
   Optional<JUserPromotion> findByUserIdAndPromotionId(UUID userId, UUID promotionId);

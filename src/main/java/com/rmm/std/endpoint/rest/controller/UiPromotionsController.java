@@ -1,7 +1,7 @@
 package com.rmm.std.endpoint.rest.controller;
 
-import com.rmm.std.dto.PromotionResponse;
 import com.rmm.std.service.PromotionService;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
@@ -19,8 +19,10 @@ public class UiPromotionsController {
     model.addAttribute(
         "promotions",
         promotionService.list(PageRequest.of(0, 100)).getContent().stream()
-            .map(PromotionResponse::getId)
+            .map(p -> new PromotionView(p.getId(), p.getLabel(), p.getStartYear()))
             .toList());
     return "promotions";
   }
+
+  public record PromotionView(UUID id, String label, Integer startYear) {}
 }
