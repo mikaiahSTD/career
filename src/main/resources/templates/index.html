@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" th:href="@{/ui}">Career Management</a>
+    <div class="nav-right">
+      <span id="user-info" class="text-muted"></span>
+      <button id="logout-btn" class="btn btn-danger">Logout</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1>Promotions / Cohorts</h1>
+
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Promotion ID</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="promotions-body">
+          <tr th:each="p : ${promotions}">
+            <td th:text="${p.id}"></td>
+            <td>
+              <button
+                class="btn btn-primary admin-only hidden"
+                th:attr="data-id=${p.id}"
+                onclick="downloadGraduates(this.getAttribute('data-id'))">
+                Download Graduates (Excel)
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p th:if="${#lists.isEmpty(promotions)}" class="no-data">
+        No promotions found.
+      </p>
+    </div>
+
+    <section id="student-grades" style="display: none;">
+      <h2 class="section-title">My Grades</h2>
+      <div class="card">
+        <div id="grades-container"><p class="no-data">Loading...</p></div>
+      </div>
+    </section>
+  </main>
+
+  <script th:src="@{/js/ui.js}"></script>
+  <script>
+    CareerUI.Auth.requireAuth().then(function (me) {
+      if (!me) {
+        return;
+      }
+
+      var info = document.getElementById('user-info');
+      if (info) {
+        info.innerHTML = 'Signed in as <span class="role-badge">' + CareerUI.esc(me.role || 'USER') + '</span>';
+      }
+
+      document.getElementById('logout-btn').addEventListener('click', function () {
+        CareerUI.Auth.logout();
+      });
+
+      if (me.role === 'ADMIN') {
+        var adminOnly = document.querySelectorAll('.admin-only');
+        for (var i = 0; i < adminOnly.length; i++) {
+          adminOnly[i].classList.remove('hidden');
+        }
+      }
+
+      if (me.role === 'STUDENT') {
+        loadMyGrades();
+      }
+    });
+
+    function downloadGraduates(promotionId) {
+      CareerUI.apiBlob('/promotions/' + promotionId + '/graduates/export')
+        .then(function (blob) {
+          CareerUI.downloadBlob(blob, 'graduates-' + promotionId + '.xlsx');
+        })
+        .catch(function (err) {
+          alert('Error: ' + err.message);
+        });
+    }
+
+    function loadMyGrades() {
+      var section = document.getElementById('student-grades');
+      section.style.display = 'block';
+
+      CareerUI.apiJson('/users/me/grades')
+        .then(function (grades) {
+          var container = document.getElementById('grades-container');
+          container.innerHTML = '';
+
+          if (!grades || grades.length === 0) {
+            container.innerHTML = '<p class="no-data">No grades recorded yet.</p>';
+            return;
+          }
+
+          var table = document.createElement('table');
+          table.className = 'table';
+          table.innerHTML =
+            '<thead><tr><th>Exam</th><th>Grade /20</th><th>Description</th><th>Date</th></tr></thead>';
+
+          var tbody = document.createElement('tbody');
+          grades.forEach(function (g) {
+            var row = document.createElement('tr');
+            var date = g.assignmentDate ? String(g.assignmentDate).substring(0, 10) : '';
+            row.innerHTML =
+              '<td>' + CareerUI.esc(g.examId || '-') + '</td>' +
+              '<td>' + CareerUI.esc(g.value) + '</td>' +
+              '<td>' + CareerUI.esc(g.description || '-') + '</td>' +
+              '<td>' + CareerUI.esc(date || '-') + '</td>';
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          container.appendChild(table);
+        })
+        .catch(function (err) {
+          document.getElementById('grades-container').innerHTML =
+            '<p class="no-data">' + CareerUI.esc(err.message) + '</p>';
+        });
+    }
+  </script>
+</body>
+</html>
