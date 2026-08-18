@@ -29,12 +29,7 @@
       <label for="password">Password</label>
       <input type="password" id="password" name="password" autocomplete="new-password" required />
 
-      <label for="role">Role</label>
-      <select id="role" name="role">
-        <option value="STUDENT">Student</option>
-        <option value="TEACHER">Teacher</option>
-        <option value="ADMIN">Admin</option>
-      </select>
+      <p class="auth-subtitle">Accounts created here are student accounts. Teacher and admin accounts are created by an administrator.</p>
 
       <button type="submit" class="btn btn-primary">Sign Up</button>
     </form>
@@ -62,7 +57,7 @@
           lastName: document.getElementById('lastName').value,
           email: document.getElementById('email').value,
           password: document.getElementById('password').value,
-          role: document.getElementById('role').value
+          role: 'STUDENT'
         }
       })
         .then(function () {

@@ -111,7 +111,7 @@ class TranscriptIT extends FacadeIT {
         .firstname("John")
         .lastname("Doe")
         .email("john-" + suffix + "@test.com")
-        .password("p@ssw0rd-" + suffix)
+        .password("P@ssw0rd-" + suffix)
         .role(Role.STUDENT)
         .build();
   }

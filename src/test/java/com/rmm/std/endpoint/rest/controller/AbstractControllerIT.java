@@ -2,7 +2,9 @@ package com.rmm.std.endpoint.rest.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rmm.std.conf.EnvConf;
 import com.rmm.std.conf.FacadeIT;
 import com.rmm.std.constant.Role;
 import com.rmm.std.dto.LoginRequest;
@@ -42,10 +44,46 @@ abstract class AbstractControllerIT extends FacadeIT {
   protected record Registration(UUID id, String email, String token) {}
 
   protected Registration registerAndLogin(Role role) throws Exception {
+    if (role == Role.ADMIN) {
+      return loginAsBootstrapAdmin();
+    }
+    if (role == Role.TEACHER) {
+      return createAndLoginAs(role);
+    }
+    return registerStudentAndLogin(randomUser(Role.STUDENT));
+  }
+
+  private Registration loginAsBootstrapAdmin() throws Exception {
+    ResponseEntity<String> loginRes =
+        post(
+            "/auth/login",
+            json(new LoginRequest(EnvConf.ADMIN_EMAIL, EnvConf.ADMIN_PASSWORD)),
+            null);
+    assertEquals(HttpStatus.OK, loginRes.getStatusCode());
+    JsonNode body = objectMapper.readTree(loginRes.getBody());
+    return new Registration(
+        UUID.fromString(body.get("userId").asText()),
+        EnvConf.ADMIN_EMAIL,
+        body.get("token").asText());
+  }
+
+  private Registration createAndLoginAs(Role role) throws Exception {
+    Registration admin = loginAsBootstrapAdmin();
     UserRequest req = randomUser(role);
+    ResponseEntity<String> createRes = post("/users", json(req), admin.token());
+    assertEquals(HttpStatus.CREATED, createRes.getStatusCode());
+    UUID id = UUID.fromString(objectMapper.readTree(createRes.getBody()).get("id").asText());
+    return loginAs(req, id);
+  }
+
+  private Registration registerStudentAndLogin(UserRequest req) throws Exception {
     ResponseEntity<String> registerRes = post("/auth/register", json(req), null);
     assertEquals(HttpStatus.OK, registerRes.getStatusCode());
     UUID id = UUID.fromString(objectMapper.readTree(registerRes.getBody()).get("id").asText());
+    return loginAs(req, id);
+  }
+
+  private Registration loginAs(UserRequest req, UUID id) throws Exception {
     ResponseEntity<String> loginRes =
         post("/auth/login", json(new LoginRequest(req.getEmail(), req.getPassword())), null);
     assertEquals(HttpStatus.OK, loginRes.getStatusCode());
@@ -60,7 +98,7 @@ abstract class AbstractControllerIT extends FacadeIT {
         .firstname("John")
         .lastname("Doe")
         .email("john-" + suffix + "@test.com")
-        .password("p@ssw0rd-" + suffix)
+        .password("P@ssw0rd-" + suffix)
         .role(role)
         .build();
   }

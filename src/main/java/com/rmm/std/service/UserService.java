@@ -59,6 +59,12 @@ public class UserService implements UserDetailsService {
     return res;
   }
 
+  @Transactional
+  public UserResponse registerStudent(UserRequest req) {
+    req.setRole(Role.STUDENT);
+    return createUser(req);
+  }
+
   public PageResponse<UserResponse> list(Role role, Pageable pageable) {
     Page<JUser> page =
         role == null ? userRepository.findAll(pageable) : userRepository.findByRole(role, pageable);

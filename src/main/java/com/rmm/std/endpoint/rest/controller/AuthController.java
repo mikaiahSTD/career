@@ -44,7 +44,7 @@ public class AuthController {
 
   @PostMapping("/register")
   public ResponseEntity<?> registerUser(@RequestBody @Valid UserRequest req) {
-    return ResponseEntity.ok().body(userService.createUser(req));
+    return ResponseEntity.ok().body(userService.registerStudent(req));
   }
 
   @PostMapping("/login")
@@ -64,7 +64,7 @@ public class AuthController {
             .httpOnly(true)
             .secure(request.isSecure())
             .path("/")
-            .sameSite("Lax")
+            .sameSite("Strict")
             .maxAge(Duration.ofMillis(jwtService.getExpirationMs()))
             .build();
 
@@ -89,7 +89,7 @@ public class AuthController {
             .httpOnly(true)
             .secure(request.isSecure())
             .path("/")
-            .sameSite("Lax")
+            .sameSite("Strict")
             .maxAge(Duration.ZERO)
             .build();
 
