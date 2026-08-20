@@ -80,7 +80,6 @@ public class AuthController {
       try {
         tokenBlacklistService.revoke(token, jwtService.extractExpiration(token).getTime());
       } catch (JwtException | IllegalArgumentException e) {
-        // ignore: malformed or already-expired tokens cannot be revoked
       }
     }
 

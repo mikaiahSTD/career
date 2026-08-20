@@ -33,6 +33,7 @@ tags:
   - name: GradeHistory
   - name: Transcripts
   - name: GraduatesExport
+  - name: Health
   - name: UI
 
 paths:
@@ -406,10 +407,12 @@ paths:
       - $ref: '#/components/parameters/IdParam'
     get:
       tags: [Promotions]
-      summary: Get all students and their grades for a promotion
+      summary: Get students and their grades for a promotion
       description: >
-        Requires role: ADMIN. Returns a comprehensive view of every enrolled
-        student's grades across all courses and exams in the promotion.
+        Requires role: ADMIN or TEACHER. Returns a view of every enrolled
+        student's grades in the promotion. ADMIN sees all courses and exams.
+        TEACHER sees only the grades for courses they teach; grades for other
+        courses are filtered out.
       responses:
         '200':
           description: Students with their grades
@@ -1433,15 +1436,69 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /ping:
+    get:
+      tags: [Health]
+      summary: Simple health check
+      description: Public endpoint. Returns "pong" to confirm the API is running.
+      responses:
+        '200':
+          description: API is alive
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: pong
+
+  /health/bucket:
+    get:
+      tags: [Health]
+      summary: Check file bucket storage connectivity
+      description: >
+        Public endpoint. Tests upload, download, directory upload, and presigning
+        on the configured file bucket (e.g. AWS S3). Returns a presigned URL on success.
+      responses:
+        '200':
+          description: Bucket is operational
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /health/email:
+    get:
+      tags: [Health]
+      summary: Check email system connectivity
+      description: >
+        Public endpoint. Sends 5 test emails (subject-only, CC, BCC, body,
+        attachment) to the specified address.
+      parameters:
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: email
+          description: Email address to send the test emails to
+      responses:
+        '200':
+          description: Emails sent successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
   /ui/promotions:
     get:
       tags: [UI]
-      summary: Server-rendered Thymeleaf page listing all promotions
+      summary: Server-rendered Thymeleaf page listing student grades per promotion
       description: >
-        Requires role: ADMIN. Renders an HTML page listing every promotion,
-        each with a button that triggers the asynchronous export
-        (POST /promotions/{promotionId}/graduates/export) and then downloads the
-        generated file from S3.
+        Requires role: ADMIN or TEACHER. Renders a read-only HTML page that
+        lists every promotion and, for each enrolled student, the grades per
+        course and exam. ADMIN sees grades for all courses; TEACHER only sees
+        the grades for the courses they teach. Graduate download is not
+        available on this page; it lives on the main dashboard /ui.
       responses:
         '200':
           description: HTML page
@@ -1455,8 +1512,11 @@ paths:
       tags: [UI]
       summary: Server-rendered dashboard page
       description: >
-        Public endpoint. Renders the main dashboard HTML page with
-        promotions list and student grades section.
+        Requires authentication. Renders the main dashboard HTML page. ADMIN
+        and TEACHER see the promotion overview (label, start year, id) with,
+        for ADMIN, the "Download Graduates (Excel)" action, and can navigate
+        to /ui/promotions from the navbar. STUDENT does not see promotion
+        information; only their own grades section is shown.
       responses:
         '200':
           description: HTML page
