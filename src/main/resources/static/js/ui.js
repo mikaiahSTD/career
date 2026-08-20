@@ -1,5 +1,3 @@
-/* Shared UI helpers: auth session (HttpOnly cookie), API wrapper, DOM/HTML utilities.
-   The JWT lives in an HttpOnly cookie set by the server; JavaScript never touches it. */
 (function (window) {
   'use strict';
 
@@ -12,6 +10,14 @@
   function readCookie(name) {
     var match = document.cookie.match('(?:^|;)\\s*' + name + '\\s*=\\s*([^;]*)');
     return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function readCsrfToken() {
+    var meta = document.querySelector('meta[name="_csrf"]');
+    if (meta && meta.getAttribute('content')) {
+      return meta.getAttribute('content');
+    }
+    return readCookie(XSRF_COOKIE);
   }
 
   var Auth = {
@@ -38,6 +44,7 @@
         })
         .catch(function (err) {
           if (err.status === 401 || err.status === 403) {
+            currentUser = null;
             window.location.replace(LOGIN_URL);
             return null;
           }
@@ -79,7 +86,7 @@
       headers['Content-Type'] = 'application/json';
     }
     if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-      var csrf = readCookie(XSRF_COOKIE);
+      var csrf = readCsrfToken();
       if (csrf) {
         headers[XSRF_HEADER] = csrf;
       }
@@ -95,7 +102,7 @@
       return statusMessage(res, 'Request failed (HTTP ' + res.status + ')').then(function (message) {
         var err = new Error(message);
         err.status = res.status;
-        if (res.status === 401 && !options.noAuthRedirect) {
+        if ((res.status === 401 || res.status === 403) && !options.noAuthRedirect) {
           currentUser = null;
           window.location.replace(LOGIN_URL);
         }
