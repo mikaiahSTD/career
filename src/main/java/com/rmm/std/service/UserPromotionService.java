@@ -102,11 +102,6 @@ public class UserPromotionService {
     userPromotionRepository.deleteById(id);
   }
 
-  /**
-   * A student who repeats a year gets a new {@code user_promotion} row for the target promotion.
-   * The previous row is transitioned to {@code REPEATING} with {@code endDate = now()} in the same
-   * transaction, so it is never left as {@code IN_PROGRESS} after the student has moved on.
-   */
   @Transactional
   public UserPromotionResponse repeatYear(UserPromotionRepeatRequest req) {
     if (!userRepository.existsById(req.getUserId())) {

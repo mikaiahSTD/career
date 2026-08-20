@@ -118,13 +118,6 @@ public class GraduatesExportService {
     return rows;
   }
 
-  /**
-   * A student is graduated only if every credit of his career has been earned. The required total
-   * is the sum of the credits of every course of his career (180 credits over the 3-year program).
-   * A credit is earned only when the student's overall average for the course is at least 10/20.
-   * When no current group (hence no career) can be resolved, the student's own courses are used as
-   * the reference.
-   */
   private int requiredCredits(UUID studentId, int earnedCredits) {
     return userGroupRepository
         .findFirstByUserIdAndEndDateIsNull(studentId)
