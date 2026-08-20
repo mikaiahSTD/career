@@ -39,7 +39,7 @@
               <button
                 class="btn btn-primary admin-only hidden"
                 th:attr="data-id=${p.id}"
-                onclick="downloadGraduates(this.getAttribute('data-id'))">
+                onclick="downloadGraduates(this, this.getAttribute('data-id'))">
                 Download Graduates (Excel)
               </button>
             </td>
@@ -94,14 +94,43 @@
       }
     });
 
-    function downloadGraduates(promotionId) {
-      CareerUI.apiBlob('/promotions/' + promotionId + '/graduates/export')
+    function downloadGraduates(button, promotionId) {
+      var originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Generating...';
+
+      CareerUI.api('/promotions/' + promotionId + '/graduates/export', { method: 'POST' })
+        .then(function () {
+          return pollExportReady(promotionId, 20);
+        })
         .then(function (blob) {
           CareerUI.downloadBlob(blob, 'graduates-' + promotionId + '.xlsx');
         })
         .catch(function (err) {
           alert('Error: ' + err.message);
+        })
+        .then(function () {
+          button.disabled = false;
+          button.textContent = originalText;
         });
+    }
+
+    function pollExportReady(promotionId, attemptsLeft) {
+      if (attemptsLeft <= 0) {
+        var err = new Error('Export generation timed out. Please try again in a few moments.');
+        err.status = 0;
+        throw err;
+      }
+      return CareerUI.apiBlob('/promotions/' + promotionId + '/graduates/export').catch(function (err) {
+        if (err.status === 404) {
+          return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+              pollExportReady(promotionId, attemptsLeft - 1).then(resolve, reject);
+            }, 2000);
+          });
+        }
+        throw err;
+      });
     }
 
     function loadMyGrades() {
