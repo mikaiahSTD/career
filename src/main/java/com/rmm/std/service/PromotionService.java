@@ -2,6 +2,7 @@ package com.rmm.std.service;
 
 import com.rmm.std.constant.PromotionStatus;
 import com.rmm.std.constant.Role;
+import com.rmm.std.domain.User;
 import com.rmm.std.dto.PageResponse;
 import com.rmm.std.dto.PromotionRequest;
 import com.rmm.std.dto.PromotionResponse;
@@ -80,12 +81,15 @@ public class PromotionService {
   }
 
   @Transactional(readOnly = true)
-  public PromotionStudentsGradesResponse getStudentsGrades(UUID promotionId) {
+  public PromotionStudentsGradesResponse getStudentsGrades(User requester, UUID promotionId) {
     JPromotion promotion = getEntity(promotionId);
 
     List<JUserPromotion> enrollments = userPromotionRepository.findByPromotionId(promotionId);
 
-    List<JGrade> grades = gradeRepository.findGradesByPromotionId(promotionId);
+    List<JGrade> grades =
+        requester.getRole() == Role.TEACHER
+            ? gradeRepository.findGradesByPromotionIdForTeacher(promotionId, requester.getId())
+            : gradeRepository.findGradesByPromotionId(promotionId);
 
     Map<UUID, List<JGrade>> gradesByStudent = new LinkedHashMap<>();
     for (JGrade grade : grades) {

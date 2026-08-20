@@ -21,6 +21,19 @@ class UiPromotionsIT extends AbstractControllerIT {
 
     assertEquals(HttpStatus.OK, res.getStatusCode());
     assertTrue(res.getBody().contains("Promotions"));
+    assertTrue(res.getBody().contains("meta name=\"_csrf\""));
+  }
+
+  @Test
+  @SneakyThrows
+  void uiPromotions_asTeacher_returnsView() {
+    var teacher = registerAndLogin(Role.TEACHER);
+
+    ResponseEntity<String> res = get("/ui/promotions", teacher.token());
+
+    assertEquals(HttpStatus.OK, res.getStatusCode());
+    assertTrue(res.getBody().contains("Promotions"));
+    assertTrue(res.getBody().contains("meta name=\"_csrf\""));
   }
 
   @Test

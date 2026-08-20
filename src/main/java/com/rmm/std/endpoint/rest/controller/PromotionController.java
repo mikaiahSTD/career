@@ -5,6 +5,7 @@ import com.rmm.std.dto.PromotionRequest;
 import com.rmm.std.dto.PromotionResponse;
 import com.rmm.std.dto.PromotionStudentsGradesResponse;
 import com.rmm.std.dto.UserResponse;
+import com.rmm.std.security.UserPrincipal;
 import com.rmm.std.service.PromotionService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,7 +66,8 @@ public class PromotionController {
   }
 
   @GetMapping("/{id}/students-grades")
-  public PromotionStudentsGradesResponse getStudentsGrades(@PathVariable UUID id) {
-    return promotionService.getStudentsGrades(id);
+  public PromotionStudentsGradesResponse getStudentsGrades(
+      @PathVariable UUID id, @AuthenticationPrincipal UserPrincipal principal) {
+    return promotionService.getStudentsGrades(principal.getUser(), id);
   }
 }

@@ -140,6 +140,46 @@ class PromotionStudentsGradesIT extends AbstractControllerIT {
 
   @Test
   @SneakyThrows
+  void getStudentsGrades_asTeacher_onlyOwnCourses() {
+    var admin = registerAndLogin(Role.ADMIN);
+    var teacher = registerAndLogin(Role.TEACHER);
+    var student = registerAndLogin(Role.STUDENT);
+    String promotionId = createPromotion(admin.token());
+    String semesterId = createSemester(admin.token(), promotionId);
+    String careerId = createCareer(admin.token());
+
+    String taughtCourseId = createCourseWithRef(admin.token(), "CRS-TAUGHT");
+    String otherCourseId = createCourseWithRef(admin.token(), "CRS-OTHER");
+    createCareerCourse(admin.token(), careerId, taughtCourseId, 1);
+    createCareerCourse(admin.token(), careerId, otherCourseId, 1);
+    createCourseTeacher(admin.token(), taughtCourseId, teacher.id().toString());
+
+    String groupId = createGroup(admin.token(), promotionId, careerId);
+    createUserGroup(admin.token(), student.id().toString(), groupId);
+    createUserPromotion(admin.token(), student.id().toString(), promotionId);
+
+    String taughtExam = createExamWithSemester(admin.token(), taughtCourseId, semesterId);
+    String otherExam = createExamWithSemester(admin.token(), otherCourseId, semesterId);
+    createGradeWithValue(admin.token(), taughtExam, student.id().toString(), 15.0);
+    createGradeWithValue(admin.token(), otherExam, student.id().toString(), 12.0);
+
+    ResponseEntity<String> res =
+        get("/promotions/" + promotionId + "/students-grades", teacher.token());
+
+    assertEquals(HttpStatus.OK, res.getStatusCode());
+    JsonNode body = objectMapper.readTree(res.getBody());
+    assertEquals(1, body.get("students").size());
+    JsonNode studentNode = body.get("students").get(0);
+    assertEquals(student.id().toString(), studentNode.get("studentId").asText());
+
+    JsonNode courseGrades = studentNode.get("courseGrades");
+    assertEquals(1, courseGrades.size());
+    assertEquals("Course CRS-TAUGHT", courseGrades.get(0).get("courseTitle").asText());
+    assertEquals(15.0, courseGrades.get(0).get("grade").asDouble(), 0.01);
+  }
+
+  @Test
+  @SneakyThrows
   void getStudentsGrades_multipleCourses_sorted() {
     var admin = registerAndLogin(Role.ADMIN);
     var student = registerAndLogin(Role.STUDENT);
