@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="_csrf" th:content="${_csrf.token}" />
   <title>Dashboard</title>
   <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
@@ -10,24 +11,29 @@
   <nav class="navbar">
     <a class="brand" th:href="@{/ui}">Career Management</a>
     <div class="nav-right">
+      <a id="grades-link" class="nav-link grades-link hidden" th:href="@{/ui/promotions}">Student Grades</a>
       <span id="user-info" class="text-muted"></span>
       <button id="logout-btn" class="btn btn-danger">Logout</button>
     </div>
   </nav>
 
   <main class="container">
-    <h1>Promotions / Cohorts</h1>
+    <h1 th:if="${promotions != null}">Promotions / Cohorts</h1>
 
-    <div class="card">
+    <div class="card" th:if="${promotions != null}">
       <table class="table">
         <thead>
           <tr>
+            <th>Label</th>
+            <th>Start Year</th>
             <th>Promotion ID</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="promotions-body">
           <tr th:each="p : ${promotions}">
+            <td th:text="${p.label}"></td>
+            <td th:text="${p.startYear}"></td>
             <td th:text="${p.id}"></td>
             <td>
               <button
@@ -73,6 +79,13 @@
         var adminOnly = document.querySelectorAll('.admin-only');
         for (var i = 0; i < adminOnly.length; i++) {
           adminOnly[i].classList.remove('hidden');
+        }
+      }
+
+      if (me.role === 'ADMIN' || me.role === 'TEACHER') {
+        var gradesLink = document.getElementById('grades-link');
+        if (gradesLink) {
+          gradesLink.classList.remove('hidden');
         }
       }
 

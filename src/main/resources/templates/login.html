@@ -47,7 +47,11 @@
         }
       })
         .then(function (data) {
-          window.location.href = data.role === 'ADMIN' ? '/ui/promotions' : '/ui';
+          if (data.role === 'ADMIN' || data.role === 'TEACHER') {
+            window.location.href = '/ui/promotions';
+          } else {
+            window.location.href = '/ui';
+          }
         })
         .catch(function (err) {
           alertEl.textContent = err.message || 'Login failed';

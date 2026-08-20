@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="_csrf" th:content="${_csrf.token}" />
   <title>Promotions</title>
   <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
@@ -24,22 +25,24 @@
 
   <script th:src="@{/js/ui.js}"></script>
   <script>
-    CareerUI.Auth.requireAuth().then(function (me) {
-      if (!me) {
-        return;
-      }
+CareerUI.Auth.requireAuth().then(function (me) {
+        if (!me) {
+          return;
+        }
 
-      var info = document.getElementById('user-info');
-      if (info) {
-        info.innerHTML = 'Signed in as <span class="role-badge">' + CareerUI.esc(me.role || 'USER') + '</span>';
-      }
+        var role = me.role || 'USER';
 
-      document.getElementById('logout-btn').addEventListener('click', function () {
-        CareerUI.Auth.logout();
+        var info = document.getElementById('user-info');
+        if (info) {
+          info.innerHTML = 'Signed in as <span class="role-badge">' + CareerUI.esc(role) + '</span>';
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', function () {
+          CareerUI.Auth.logout();
+        });
+
+        loadPromotions();
       });
-
-      loadPromotions();
-    });
 
     function loadPromotions() {
       var container = document.getElementById('promotions-container');
@@ -93,19 +96,6 @@
         .then(function (data) {
           body.dataset.loaded = 'true';
           body.innerHTML = '';
-
-          var toolbar = document.createElement('div');
-          toolbar.className = 'toolbar';
-          toolbar.style.marginBottom = '12px';
-
-          var downloadBtn = document.createElement('button');
-          downloadBtn.className = 'btn btn-primary';
-          downloadBtn.textContent = 'Download Graduates (Excel)';
-          downloadBtn.addEventListener('click', function () {
-            downloadGraduates(promotionId);
-          });
-          toolbar.appendChild(downloadBtn);
-          body.appendChild(toolbar);
 
           var students = data && data.students ? data.students : [];
           if (students.length === 0) {
@@ -173,57 +163,6 @@
       p.className = 'no-data';
       p.textContent = text;
       return p;
-    }
-
-    function downloadGraduates(promotionId) {
-      var toolbar = document.querySelector('#promotions-container .promotion .promotion-body.open .toolbar');
-      var status = document.createElement('span');
-      status.className = 'text-muted';
-      status.textContent = ' Generating file...';
-      if (toolbar) {
-        toolbar.appendChild(status);
-      }
-      CareerUI.api('/promotions/' + promotionId + '/graduates/export', { method: 'POST' })
-        .then(function () {
-          pollExport(promotionId, status, 0);
-        })
-        .catch(function (err) {
-          if (status) {
-            status.textContent = '';
-          }
-          alert('Error: ' + err.message);
-        });
-    }
-
-    function pollExport(promotionId, status, attempts) {
-      if (attempts > 30) {
-        if (status) {
-          status.textContent = ' Taking too long, please try again.';
-        }
-        return;
-      }
-      CareerUI.api('/promotions/' + promotionId + '/graduates/export')
-        .then(function (res) {
-          return res.blob();
-        })
-        .then(function (blob) {
-          if (status) {
-            status.textContent = '';
-          }
-          CareerUI.downloadBlob(blob, 'graduates-' + promotionId + '.xlsx');
-        })
-        .catch(function (err) {
-          if (err.status === 404) {
-            setTimeout(function () {
-              pollExport(promotionId, status, attempts + 1);
-            }, 2000);
-          } else {
-            if (status) {
-              status.textContent = '';
-            }
-            alert('Error: ' + err.message);
-          }
-        });
     }
   </script>
 </body>
