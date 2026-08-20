@@ -1,6 +1,7 @@
 package com.rmm.std.conf;
 
 import com.rmm.std.security.JwtAuthenticationFilter;
+import com.rmm.std.security.JwtCookieCsrfTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
@@ -25,6 +25,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final JwtCookieCsrfTokenRepository csrfTokenRepository;
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
 
@@ -48,7 +49,7 @@ public class SecurityConfig {
 
     http.csrf(
             csrf ->
-                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                csrf.csrfTokenRepository(csrfTokenRepository)
                     .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
                         new AntPathRequestMatcher("/auth/login"),
@@ -126,12 +127,13 @@ public class SecurityConfig {
                         HttpMethod.GET,
                         "/promotions/*/graduates/export",
                         "/promotions/*/graduates",
-                        "/promotions/*/students-grades",
-                        "/ui/promotions",
                         "/user-promotions",
                         "/user-promotions/*",
                         "/users")
                     .hasRole("ADMIN")
+                    .requestMatchers(
+                        HttpMethod.GET, "/promotions/*/students-grades", "/ui/promotions")
+                    .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(HttpMethod.POST, "/exams", "/grades")
                     .hasAnyRole("ADMIN", "TEACHER")
                     .requestMatchers(HttpMethod.PUT, "/exams/*")
@@ -165,9 +167,9 @@ public class SecurityConfig {
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
                     .requestMatchers(HttpMethod.GET, "/user-groups/*")
                     .hasAnyRole("ADMIN", "TEACHER", "STUDENT")
-                    .requestMatchers("/ui/login", "/ui/signup")
+                    .requestMatchers("/ui/login")
                     .anonymous()
-                    .requestMatchers("/ui")
+                    .requestMatchers("/ui/signup")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
